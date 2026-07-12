@@ -9,6 +9,7 @@ export const useAuth=() => {
             const res=await register({username,email,password,role});
             if(res){
                 localStorage.setItem("user",JSON.stringify(res.user));
+                 localStorage.setItem("token", res.token);
             }
             dispatch(setUser(res.user));
             
@@ -25,7 +26,7 @@ export const useAuth=() => {
         const res=await login({email,password});
         if(res){
           localStorage.setItem("user",JSON.stringify(res.user));
-          
+           localStorage.setItem("token", res.token);
         }
         dispatch(setUser(res.user));
 return res; 

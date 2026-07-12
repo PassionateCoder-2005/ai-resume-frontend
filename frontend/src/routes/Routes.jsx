@@ -8,6 +8,9 @@ import CandidateProtected from "../features/auth/pages/CandidateProtected";
 import CandidateDash from "../features/auth/pages/CandidateDash";
 import HrProtected from "../features/auth/pages/HrProtected";
 import HrDash from "../features/auth/pages/HrDash";
+import Job from "../features/jobs/pages/Job";
+import JobsDets from "../features/jobs/pages/JobsDets";
+import UploadResume from "../features/resumes/pages/UploadResume";
 
 export const router = createBrowserRouter([
   {
@@ -33,6 +36,23 @@ export const router = createBrowserRouter([
     element:<HrProtected>
       <HrDash/>
     </HrProtected>
+  },
+  {
+    path:"/all-jobs",
+    element:<Job/>
+  },
+  {
+    
+    path:"/job/:id",
+    element:<CandidateProtected>
+    <JobsDets/>
+    </CandidateProtected>
+  },
+  {
+    path:"/upload-resume",
+    element:<CandidateProtected>
+      <UploadResume/>
+    </CandidateProtected>
   }
 ]);
 

@@ -169,43 +169,43 @@ const auth=useAuth()
   }
 
   // Simulating a file upload and AI screening process
-  const handleFileChange = (e) => {
-    const file = e.target.files[0]
-    if (!file) return
+  // const handleFileChange = (e) => {
+  //   const file = e.target.files[0]
+  //   if (!file) return
 
-    setIsUploading(true)
-    setUploadProgress(10)
+  //   setIsUploading(true)
+  //   setUploadProgress(10)
 
-    const interval = setInterval(() => {
-      setUploadProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval)
-          return 100
-        }
-        return prev + 15
-      })
-    }, 250)
+  //   const interval = setInterval(() => {
+  //     setUploadProgress(prev => {
+  //       if (prev >= 100) {
+  //         clearInterval(interval)
+  //         return 100
+  //       }
+  //       return prev + 15
+  //     })
+  //   }, 250)
 
-    setTimeout(() => {
-      setIsUploading(false)
-      const randomScore = Math.floor(Math.random() * 8) + 89 // Generate score between 89 and 97
-      setResumeData(prev => ({
-        ...prev,
-        name: file.name,
-        uploadDate: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
-        score: randomScore,
-        fileSize: (file.size / (1024 * 1024)).toFixed(1) + ' MB'
-      }))
+  //   setTimeout(() => {
+  //     setIsUploading(false)
+  //     const randomScore = Math.floor(Math.random() * 8) + 89 // Generate score between 89 and 97
+  //     setResumeData(prev => ({
+  //       ...prev,
+  //       name: file.name,
+  //       uploadDate: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+  //       score: randomScore,
+  //       fileSize: (file.size / (1024 * 1024)).toFixed(1) + ' MB'
+  //     }))
 
-      setStats(prev => ({
-        ...prev,
-        resumeName: file.name,
-        uploadDate: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-      }))
+  //     setStats(prev => ({
+  //       ...prev,
+  //       resumeName: file.name,
+  //       uploadDate: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+  //     }))
 
-      addToast(`Resume "${file.name}" uploaded successfully! AI analyzed a fit score of ${randomScore}%.`, 'success')
-    }, 2000)
-  }
+  //     addToast(`Resume "${file.name}" uploaded successfully! AI analyzed a fit score of ${randomScore}%.`, 'success')
+  //   }, 2000)
+  // }
 
   // Simulating Apply Flow
   const handleApplyJob = (jobId) => {
@@ -290,6 +290,7 @@ const auth=useAuth()
               <span className="text-sm font-semibold text-indigo-600 bg-indigo-50/70 px-3.5 py-1.5 rounded-xl cursor-default">Dashboard</span>
               <a href="#applications-section" className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">My Applications</a>
               <a href="#jobs-section" className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">Recommended Jobs</a>
+              <Link to="/all-jobs" className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">Explore All Jobs</Link>
             </nav>
 
             {/* Profile Dropdown / Actions */}
@@ -336,49 +337,11 @@ const auth=useAuth()
             </p>
           </div>
 
-          <div className="relative z-10 shrink-0 flex gap-3">
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              onChange={handleFileChange} 
-              accept=".pdf,.docx,.doc" 
-              className="hidden" 
-            />
-            <button
-              onClick={triggerFileUpload}
-              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 px-4.5 py-3 text-sm font-semibold text-white shadow-md shadow-indigo-100 hover:shadow-lg transition-all transform hover:-translate-y-0.5"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" className="w-4 h-4">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-              </svg>
-              Upload New Resume
-            </button>
-          </div>
         </div>
 
         {/* 3. Statistics Cards Grid (4) */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-          
-          {/* Card 1: Resume Uploaded */}
-          <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.04)] hover:shadow-md transition-all duration-200">
-            <div className="flex justify-between items-start">
-              <div className="space-y-1">
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Resume Uploaded</p>
-                <h3 className="text-sm font-bold text-slate-800 truncate max-w-[150px] sm:max-w-[180px]" title={stats.resumeName}>
-                  {stats.resumeName}
-                </h3>
-              </div>
-              <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" className="w-5 h-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-                </svg>
-              </div>
-            </div>
-            <p className="text-[10px] text-slate-400 font-medium mt-3.5 flex items-center gap-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              Uploaded on {stats.uploadDate}
-            </p>
-          </div>
+         
 
           {/* Card 2: Jobs Applied */}
           <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.04)] hover:shadow-md transition-all duration-200">
@@ -393,10 +356,7 @@ const auth=useAuth()
                 </svg>
               </div>
             </div>
-            <p className="text-[10px] text-indigo-600 font-bold mt-3.5 flex items-center gap-1.5">
-              <span>View all activity</span>
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7"/></svg>
-            </p>
+           
           </div>
 
           {/* Card 3: Shortlisted */}
@@ -563,9 +523,20 @@ const auth=useAuth()
 
             {/* Recommended Jobs Section */}
             <div id="jobs-section" className="space-y-4">
-              <div>
-                <h2 className="text-lg font-extrabold text-slate-900 tracking-tight">AI Recommended Jobs</h2>
-                <p className="text-xs text-slate-500 font-medium">Premium roles matched with your screening indicators and skills.</p>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-extrabold text-slate-900 tracking-tight">AI Recommended Jobs</h2>
+                  <p className="text-xs text-slate-500 font-medium">Premium roles matched with your screening indicators and skills.</p>
+                </div>
+                <Link
+                  to="/all-jobs"
+                  className="inline-flex items-center justify-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-white bg-indigo-50 hover:bg-indigo-600 px-4 py-2.5 rounded-xl border border-indigo-100 hover:border-indigo-600 transition-all shadow-sm hover:shadow"
+                >
+                  Explore All Jobs
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                  </svg>
+                </Link>
               </div>
 
               {/* 3 Premium Job Cards */}
@@ -633,89 +604,7 @@ const auth=useAuth()
           <div className="space-y-6">
             
             {/* Resume Details Card */}
-            <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-[0_2px_18px_-6px_rgba(0,0,0,0.04)] space-y-6">
-              <div>
-                <h3 className="text-base font-extrabold text-slate-900 tracking-tight">Resume Insights</h3>
-                <p className="text-xs text-slate-500 font-medium">Core score matching calculated from uploaded CV indicators.</p>
-              </div>
-
-              {/* Radial gauge Match score */}
-              <div className="flex flex-col items-center justify-center p-4 bg-slate-50/40 rounded-2xl border border-slate-100/50">
-                <div className="relative flex items-center justify-center">
-                  
-                  {/* Gauge Ring */}
-                  <svg className="w-24 h-24 transform -rotate-90">
-                    <circle 
-                      cx="48" 
-                      cy="48" 
-                      r="40" 
-                      stroke="#f1f5f9" 
-                      strokeWidth="6.5" 
-                      fill="transparent" 
-                    />
-                    <circle 
-                      cx="48" 
-                      cy="48" 
-                      r="40" 
-                      stroke="url(#bluePurpleGrad)" 
-                      strokeWidth="6.5" 
-                      fill="transparent" 
-                      strokeDasharray="251.2"
-                      strokeDashoffset={251.2 - (251.2 * resumeData.score) / 100}
-                      strokeLinecap="round"
-                      className="transition-all duration-1000 ease-out"
-                    />
-                    <defs>
-                      <linearGradient id="bluePurpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stopColor="#3b82f6" />
-                        <stop offset="100%" stopColor="#6366f1" />
-                      </linearGradient>
-                    </defs>
-                  </svg>
-                  <div className="absolute flex flex-col items-center justify-center text-center">
-                    <span className="text-xl font-black text-slate-900 leading-none">{resumeData.score}%</span>
-                    <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Match Score</span>
-                  </div>
-                </div>
-
-                <div className="text-center mt-3.5 space-y-0.5">
-                  <p className="text-xs font-bold text-slate-800">{resumeData.status}</p>
-                  <p className="text-[10px] text-slate-400 font-medium">Calculated vs SaaS engineering specs</p>
-                </div>
-              </div>
-
-              {/* Resume name metadata */}
-              <div className="space-y-3 bg-slate-50/20 border border-slate-100 p-4 rounded-xl">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-slate-400 font-medium">Filename:</span>
-                  <span className="text-slate-800 font-bold max-w-[150px] truncate" title={resumeData.name}>{resumeData.name}</span>
-                </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-slate-400 font-medium">File Size:</span>
-                  <span className="text-slate-800 font-bold">{resumeData.fileSize}</span>
-                </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-slate-400 font-medium">Upload Date:</span>
-                  <span className="text-slate-800 font-bold">{resumeData.uploadDate}</span>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="space-y-2.5">
-                <button
-                  onClick={() => setIsViewingResume(true)}
-                  className="w-full text-center py-2.5 px-4 text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50/50 hover:bg-indigo-50 border border-indigo-100 rounded-xl transition-all cursor-pointer"
-                >
-                  View Resume Details
-                </button>
-                <button
-                  onClick={triggerFileUpload}
-                  className="w-full text-center py-2.5 px-4 text-xs font-bold text-slate-600 hover:text-slate-800 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl transition-all cursor-pointer"
-                >
-                  Re-upload Resume
-                </button>
-              </div>
-            </div>
+            
 
             {/* Extracted Skills */}
             <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-[0_2px_18px_-6px_rgba(0,0,0,0.04)] space-y-5">
