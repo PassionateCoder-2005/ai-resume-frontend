@@ -1,4 +1,6 @@
 import React, { useState, useRef } from "react";
+import { useSelector } from "react-redux";
+import { useResumes } from "../hooks/useResume";
 
 /* ─────────────────────────────────────────
    Mock Default Resume & History Data
@@ -111,15 +113,15 @@ const UploadResume = () => {
   const fileInputRef = useRef(null);
 
   // States
-  const [currentResume, setCurrentResume] = useState(INITIAL_RESUME_DETAILS);
-  const [uploadHistory, setUploadHistory] = useState(INITIAL_HISTORY);
+   const [uploadHistory, setUploadHistory] = useState(INITIAL_HISTORY);
   const [dragActive, setDragActive] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [parsingPhase, setParsingPhase] = useState("");
   const [previewResumeModal, setPreviewResumeModal] = useState(false);
   const [notification, setNotification] = useState(null);
-
+ const {uploadResume} =useResumes()
+const { resume, loading } = useSelector((state) => state.resume);
   // Trigger Toast Notification
   const triggerToast = (msg) => {
     setNotification(msg);
@@ -127,7 +129,7 @@ const UploadResume = () => {
       setNotification(null);
     }, 4000);
   };
-
+const currentResume = resume?.resume;
   // Drag Handlers
   const handleDrag = (e) => {
     e.preventDefault();
@@ -156,124 +158,29 @@ const UploadResume = () => {
     }
   };
 
-  const validateAndProcessFile = (file) => {
-    if (file.type !== "application/pdf") {
-      triggerToast("Error: Only PDF files are supported!");
-      return;
-    }
-    if (file.size > 2 * 1024 * 1024) {
-      triggerToast("Error: File size exceeds the maximum limit of 2MB!");
-      return;
-    }
-    simulateUpload(file);
-  };
+  const validateAndProcessFile = async (file) => {
+  if (file.type !== "application/pdf") {
+    triggerToast("Only PDF files are allowed");
+    return;
+  }
 
-  // Simulated AI Parsing Process
-  const simulateUpload = (file) => {
-    setIsUploading(true);
-    setUploadProgress(0);
-    setParsingPhase("Uploading file to server...");
+  if (file.size > 5 * 1024 * 1024) {
+    triggerToast("Maximum file size is 5MB");
+    return;
+  }
 
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += 10;
-      setUploadProgress(progress);
-      if (progress >= 100) {
-        clearInterval(interval);
-        startAIParsing(file);
-      }
-    }, 150);
-  };
+  const formData = new FormData();
+  formData.append("pdf", file);
 
-  const startAIParsing = (file) => {
-    const phases = [
-      "Extracting text from PDF layers...",
-      "Analyzing semantic skills match...",
-      "Structuring job roles & history...",
-      "Calculating AI Screening Fit Score..."
-    ];
-    let phaseIdx = 0;
-    
-    const interval = setInterval(() => {
-      if (phaseIdx < phases.length) {
-        setParsingPhase(phases[phaseIdx]);
-        phaseIdx++;
-      } else {
-        clearInterval(interval);
-        finalizeAnalysis(file);
-      }
-    }, 1000);
-  };
+  try {
+    await uploadResume(formData);
+    triggerToast("Resume uploaded successfully");
+  } catch (err) {
+    triggerToast("Upload Failed");
+  }
+};
 
-  const finalizeAnalysis = (file) => {
-    setIsUploading(false);
-    
-    // Generate fresh simulated values
-    const calculatedScore = Math.floor(Math.random() * 16) + 82; // 82 to 97
-    const fileSizeFormatted = `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
-    const today = new Date().toLocaleDateString("en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric"
-    });
-
-    const parsedSkills = ["React", "TypeScript", "TailwindCSS", "Node.js", "Python", "Docker", "AWS", "Git"];
-    
-    const updatedResume = {
-      name: file.name,
-      uploadDate: today,
-      fileSize: fileSizeFormatted,
-      status: "Screening Complete",
-      score: calculatedScore,
-      summary: `Parsed candidate Profile for ${file.name.replace(".pdf", "")}. Shows excellent capability across modern full-stack web engineering setups, database design, and cloud workflows. Strong indicators of technical communication.`,
-      skills: parsedSkills,
-      experience: [
-        {
-          role: "Senior Software Engineer",
-          company: "Enterprise AI Labs",
-          period: "2024 - Present",
-          bullets: [
-            "Leading development of client-facing dashboards using React and TypeScript.",
-            "Containerized internal services using Docker & optimized AWS deployments."
-          ]
-        },
-        {
-          role: "Frontend Engineer",
-          company: "Webflow Solutions",
-          period: "2022 - 2024",
-          bullets: [
-            "Maintained high performance user interfaces using clean modern CSS strategies.",
-            "Wrote reusable components and collaborated with UI designers on design systems."
-          ]
-        }
-      ],
-      education: {
-        degree: "Bachelor of Science in Engineering",
-        school: "Institute of Technology",
-        graduation: "Class of 2022"
-      }
-    };
-
-    // Update active resume
-    setCurrentResume(updatedResume);
-
-    // Add to history
-    const newHistoryItem = {
-      id: Date.now(),
-      name: file.name,
-      date: today,
-      size: fileSizeFormatted,
-      score: calculatedScore,
-      status: "Active"
-    };
-
-    setUploadHistory(prev => [
-      newHistoryItem,
-      ...prev.map(item => ({ ...item, status: "Archived" }))
-    ]);
-
-    triggerToast(`Resume uploaded & parsed successfully! Match rating: ${calculatedScore}%`);
-  };
+  
 
   const handleChooseFileClick = () => {
     if (fileInputRef.current) {
@@ -379,13 +286,17 @@ const UploadResume = () => {
                     <IconFilePdf />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h3 className="text-xs font-bold text-slate-800 truncate" title={currentResume.name}>
-                      {currentResume.name}
+                    <h3 className="text-xs font-bold text-slate-800 truncate" title={currentResume.title}>
+                      {currentResume.title}
                     </h3>
                     <div className="flex items-center gap-1.5 mt-1 text-[10px] text-slate-400 font-medium">
-                      <span>{currentResume.fileSize}</span>
-                      <span>•</span>
-                      <span>Uploaded {currentResume.uploadDate}</span>
+                      {currentResume.fileSize && (
+                        <>
+                          <span>{currentResume.fileSize}</span>
+                          <span>•</span>
+                        </>
+                      )}
+                      <span>Uploaded {currentResume.createdAt ? new Date(currentResume.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}</span>
                     </div>
                   </div>
                 </div>
@@ -393,9 +304,21 @@ const UploadResume = () => {
                 <div className="flex flex-col gap-3">
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-slate-400 font-medium">Status</span>
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 border border-emerald-100 text-emerald-700">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                      {currentResume.status}
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border capitalize ${
+                      currentResume.status?.toLowerCase() === "completed" || currentResume.status?.toLowerCase() === "active" || currentResume.status?.toLowerCase() === "screening complete"
+                        ? "bg-emerald-50 border-emerald-100 text-emerald-700"
+                        : currentResume.status?.toLowerCase() === "pending"
+                        ? "bg-amber-50 border-amber-100 text-amber-700"
+                        : "bg-slate-50 border-slate-200 text-slate-650"
+                    }`}>
+                      <span className={`h-1.5 w-1.5 rounded-full ${
+                        currentResume.status?.toLowerCase() === "completed" || currentResume.status?.toLowerCase() === "active" || currentResume.status?.toLowerCase() === "screening complete"
+                          ? "bg-emerald-500"
+                          : currentResume.status?.toLowerCase() === "pending"
+                          ? "bg-amber-500"
+                          : "bg-slate-400"
+                      }`} />
+                      {currentResume.status || "Unknown"}
                     </span>
                   </div>
 
@@ -404,7 +327,7 @@ const UploadResume = () => {
                   {/* Buttons */}
                   <div className="flex gap-2">
                     <button
-                      onClick={() => setPreviewResumeModal(true)}
+                      onClick={() => currentResume?.resumeUrl && window.open(currentResume.resumeUrl, "_blank", "noopener,noreferrer")}
                       className="flex-1 inline-flex items-center justify-center gap-1.5 border border-slate-200 text-slate-700 hover:text-violet-600 hover:border-violet-300 font-bold text-xs py-2.5 rounded-xl transition-all shadow-sm"
                     >
                       <IconEye />
@@ -432,16 +355,35 @@ const UploadResume = () => {
                   AI Screening Assessment
                 </h2>
                 
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Fit Rating:</span>
-                  <span className="text-sm font-black text-indigo-600 bg-indigo-50 border border-indigo-100/60 px-2.5 py-0.5 rounded-lg">
-                    {currentResume.score}%
-                  </span>
-                </div>
+                {currentResume && (
+                  <div className="flex items-center gap-2">
+                    {currentResume.score !== undefined && currentResume.score !== null ? (
+                      <>
+                        <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Fit Rating:</span>
+                        <span className="text-sm font-black text-indigo-600 bg-indigo-50 border border-indigo-100/60 px-2.5 py-0.5 rounded-lg"> 
+                          {currentResume.score}%
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Status:</span>
+                        <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-lg border capitalize ${
+                          currentResume.status?.toLowerCase() === "completed" || currentResume.status?.toLowerCase() === "active" || currentResume.status?.toLowerCase() === "screening complete"
+                            ? "bg-emerald-50 border-emerald-100 text-emerald-700"
+                            : currentResume.status?.toLowerCase() === "pending"
+                            ? "bg-amber-50 border-amber-100 text-amber-700"
+                            : "bg-slate-50 border-slate-200 text-slate-650"
+                        }`}> 
+                          {currentResume.status}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Loader overlay during parsing */}
-              {isUploading ? (
+              {loading ? (
                 <div className="py-20 flex flex-col items-center justify-center gap-4 text-center">
                   <div className="h-10 w-10 border-3 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
                   <div>
@@ -455,67 +397,156 @@ const UploadResume = () => {
                     />
                   </div>
                 </div>
-              ) : (
+              ) : currentResume ? (
                 <div className="space-y-6">
+                  {/* Candidate Info Grid */}
+                  {(currentResume.aiAnalysis?.candidateName || currentResume.aiAnalysis?.email || currentResume.aiAnalysis?.phone || currentResume.aiAnalysis?.location) && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 bg-slate-50/50 rounded-xl border border-slate-150 text-xs">
+                      {currentResume.aiAnalysis.candidateName && (
+                        <div className="flex items-center gap-2 text-slate-700">
+                          <span className="text-slate-400">👤</span>
+                          <span className="font-bold">{currentResume.aiAnalysis.candidateName}</span>
+                        </div>
+                      )}
+                      {currentResume.aiAnalysis.email && (
+                        <div className="flex items-center gap-2 text-slate-700 min-w-0">
+                          <span className="text-slate-400">✉️</span>
+                          <a href={`mailto:${currentResume.aiAnalysis.email}`} className="text-indigo-600 hover:underline truncate font-semibold">{currentResume.aiAnalysis.email}</a>
+                        </div>
+                      )}
+                      {currentResume.aiAnalysis.phone && (
+                        <div className="flex items-center gap-2 text-slate-700">
+                          <span className="text-slate-400">📞</span>
+                          <span className="font-semibold">{currentResume.aiAnalysis.phone}</span>
+                        </div>
+                      )}
+                      {currentResume.aiAnalysis.location && (
+                        <div className="flex items-center gap-2 text-slate-700 min-w-0">
+                          <span className="text-slate-400">📍</span>
+                          <span className="font-semibold truncate" title={currentResume.aiAnalysis.location}>{currentResume.aiAnalysis.location}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Analysis Summary */}
-                  <div className="space-y-2">
-                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">AI Summary</h3>
-                    <p className="text-xs text-slate-650 leading-relaxed bg-slate-50/50 p-4 rounded-xl border border-slate-150">
-                      {currentResume.summary}
-                    </p>
-                  </div>
+                  {currentResume.aiAnalysis?.summary && (
+                    <div className="space-y-2">
+                      <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">AI Summary</h3>
+                      <p className="text-xs text-slate-650 leading-relaxed bg-slate-50/50 p-4 rounded-xl border border-slate-150">
+                        {currentResume.aiAnalysis.summary}
+                      </p>
+                    </div>
+                  )}
 
                   {/* Skills Found */}
-                  <div className="space-y-2.5">
-                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Extracted Tech Stack</h3>
-                    <div className="flex flex-wrap gap-1.5">
-                      {currentResume.skills.map((skill) => (
-                        <span
-                          key={skill}
-                          className="text-[11px] font-semibold text-violet-700 bg-violet-50/70 border border-violet-100 px-2.5 py-1 rounded-lg"
-                        >
-                          {skill}
-                        </span>
-                      ))}
+                  {currentResume.aiAnalysis?.skills && currentResume.aiAnalysis.skills.length > 0 && (
+                    <div className="space-y-2.5">
+                      <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Extracted Tech Stack</h3>
+                      <div className="flex flex-wrap gap-1.5">
+                        {currentResume.aiAnalysis.skills.map((skill) => (
+                          <span
+                            key={skill}
+                            className="text-[11px] font-semibold text-violet-700 bg-violet-50/70 border border-violet-100 px-2.5 py-1 rounded-lg"
+                          >
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Experience Timeline */}
-                  <div className="space-y-3">
-                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Professional Experience Mapping</h3>
-                    <div className="relative border-l border-slate-100 pl-4 ml-1 space-y-5">
-                      {currentResume.experience.map((exp, index) => (
-                        <div key={index} className="relative space-y-1">
-                          {/* timeline dot */}
-                          <div className="absolute -left-[21px] top-1.5 w-2.5 h-2.5 rounded-full bg-indigo-500 border border-white" />
-                          
-                          <div className="flex justify-between items-baseline text-xs font-bold">
-                            <span className="text-slate-800">{exp.role} @ {exp.company}</span>
-                            <span className="text-slate-400 font-semibold text-[10px]">{exp.period}</span>
+                  {currentResume.aiAnalysis?.experience && currentResume.aiAnalysis.experience.length > 0 && (
+                    <div className="space-y-3">
+                      <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Professional Experience Mapping</h3>
+                      <div className="relative border-l border-slate-100 pl-4 ml-1 space-y-5">
+                        {currentResume.aiAnalysis.experience.map((exp, index) => (
+                          <div key={index} className="relative space-y-1">
+                            {/* timeline dot */}
+                            <div className="absolute -left-[21px] top-1.5 w-2.5 h-2.5 rounded-full bg-indigo-500 border border-white" />
+                            
+                            <div className="flex justify-between items-baseline text-xs font-bold">
+                              <span className="text-slate-800">{exp.jobTitle} {exp.company ? `@ ${exp.company}` : ""}</span>
+                              <span className="text-slate-400 font-semibold text-[10px]">{exp.duration}</span>
+                            </div>
+                            
+                            {exp.bullets ? (
+                              <ul className="list-disc list-inside space-y-1 text-[11px] text-slate-550 leading-relaxed pl-1">
+                                {exp.bullets.map((b, i) => (
+                                  <li key={i}>{b}</li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p className="text-[11px] text-slate-550 leading-relaxed mt-1 pl-1">
+                                {exp.description}
+                              </p>
+                            )}
                           </div>
-                          
-                          <ul className="list-disc list-inside space-y-1 text-[11px] text-slate-550 leading-relaxed pl-1">
-                            {exp.bullets.map((b, i) => (
-                              <li key={i}>{b}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
+
+                  {/* Projects */}
+                  {currentResume.aiAnalysis?.projects && currentResume.aiAnalysis.projects.length > 0 && (
+                    <div className="space-y-3">
+                      <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Key Projects</h3>
+                      <div className="space-y-3">
+                        {currentResume.aiAnalysis.projects.map((proj, idx) => (
+                          <div key={idx} className="p-4 bg-slate-50/50 border border-slate-150 rounded-xl space-y-2">
+                            <div className="flex justify-between items-start">
+                              <h4 className="text-xs font-bold text-slate-800">{proj.name}</h4>
+                            </div>
+                            <p className="text-[11px] text-slate-550 leading-relaxed">{proj.description}</p>
+                            {proj.technologies && proj.technologies.length > 0 && (
+                              <div className="flex flex-wrap gap-1.5 mt-1">
+                                {proj.technologies.map((tech) => (
+                                  <span key={tech} className="text-[9px] font-bold text-indigo-700 bg-indigo-50/70 border border-indigo-100 px-2 py-0.5 rounded-lg">
+                                    {tech}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Education */}
-                  <div className="space-y-2">
-                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Education</h3>
-                    <div className="text-xs p-3 bg-slate-50/50 rounded-xl border border-slate-150 flex justify-between items-center">
-                      <div>
-                        <p className="font-bold text-slate-800">{currentResume.education.degree}</p>
-                        <p className="text-[10px] text-slate-400 font-semibold">{currentResume.education.school}</p>
+                  {currentResume.aiAnalysis?.education && currentResume.aiAnalysis.education.length > 0 && (
+                    <div className="space-y-2">
+                      <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Education</h3>
+                      <div className="space-y-2">
+                        {currentResume.aiAnalysis.education.map((edu, idx) => (
+                          <div key={idx} className="text-xs p-3 bg-slate-50/50 rounded-xl border border-slate-150 flex justify-between items-center">
+                            <div>
+                              <p className="font-bold text-slate-800">{edu.degree}</p>
+                              <p className="text-[10px] text-slate-400 font-semibold">{edu.institution}</p>
+                            </div>
+                            <span className="text-[10px] font-bold text-slate-400">{edu.year}</span>
+                          </div>
+                        ))}
                       </div>
-                      <span className="text-[10px] font-bold text-slate-400">{currentResume.education.graduation}</span>
                     </div>
-                  </div>
+                  )}
 
+                </div>
+              ) : (
+                <div className="py-20 flex flex-col items-center justify-center gap-4 text-center">
+                  <div className="w-16 h-16 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-350 shadow-inner">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                      <polyline points="14 2 14 8 20 8" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-800">No Active Resume</h4>
+                    <p className="text-xs text-slate-450 mt-1.5 max-w-xs mx-auto">
+                      Please upload a PDF resume using the panel on the left to see your AI Screening Assessment.
+                    </p>
+                  </div>
                 </div>
               )}
 
@@ -525,7 +556,7 @@ const UploadResume = () => {
         </div>
 
         {/* ══════════ Upload History Table ══════════ */}
-        <section className="mt-12 bg-white rounded-2xl border border-slate-200/80 shadow-[0_4px_16px_rgba(37,99,235,0.06)] overflow-hidden">
+        {/* <section className="mt-12 bg-white rounded-2xl border border-slate-200/80 shadow-[0_4px_16px_rgba(37,99,235,0.06)] overflow-hidden">
           <div className="p-6 border-b border-slate-100">
             <h2 className="text-base font-bold text-slate-900">Upload History</h2>
             <p className="text-xs text-slate-400 font-semibold mt-1">Audit log of your historical resume evaluations.</p>
@@ -585,7 +616,7 @@ const UploadResume = () => {
               </tbody>
             </table>
           </div>
-        </section>
+        </section> */}
 
       </div>
 
@@ -597,7 +628,7 @@ const UploadResume = () => {
             {/* Modal Header */}
             <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/30">
               <div>
-                <h3 className="text-sm font-extrabold text-slate-900">{currentResume.name}</h3>
+                <h3 className="text-sm font-extrabold text-slate-900">{currentResume?.title || currentResume?.name}</h3>
                 <p className="text-[10px] text-slate-400 font-semibold">Active Resume Document Representation</p>
               </div>
               <button
@@ -611,65 +642,10 @@ const UploadResume = () => {
             </div>
 
             {/* Modal Content - Resume template layout */}
-            <div className="flex-1 overflow-y-auto p-8 bg-white font-sans text-xs text-slate-600 space-y-6">
-              
-              {/* Header block */}
-              <div className="text-center pb-5 border-b border-slate-100 space-y-1">
-                <h2 className="text-lg font-black text-slate-800 tracking-tight">Rahul Sharma</h2>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wide">Software Engineer (Frontend Specialist)</p>
-                <p className="text-[10px] text-slate-400 font-medium mt-1">rahul.sharma@example.com | +1 (555) 019-2834 | Bangalore, IN</p>
-              </div>
-
-              {/* Profile Summary */}
-              <div className="space-y-2">
-                <h4 className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest border-b border-indigo-50 pb-1">Professional Summary</h4>
-                <p className="text-[11px] text-slate-600 leading-relaxed">
-                  {currentResume.summary}
-                </p>
-              </div>
-
-              {/* Experience */}
-              <div className="space-y-3">
-                <h4 className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest border-b border-indigo-50 pb-1">Work History</h4>
-                
-                <div className="space-y-4">
-                  {currentResume.experience.map((exp, index) => (
-                    <div key={index} className="space-y-1">
-                      <div className="flex justify-between font-bold text-slate-800">
-                        <span>{exp.role} @ {exp.company}</span>
-                        <span className="text-slate-400 font-semibold text-[10px]">{exp.period}</span>
-                      </div>
-                      <ul className="list-disc list-inside text-[11px] text-slate-600 space-y-0.5">
-                        {exp.bullets.map((b, i) => (
-                          <li key={i} className="leading-relaxed">{b}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Skills */}
-              <div className="space-y-2">
-                <h4 className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest border-b border-indigo-50 pb-1">Key Tech Stack</h4>
-                <p className="text-[11px] text-slate-700 leading-normal font-semibold">
-                  {currentResume.skills.join(", ")}
-                </p>
-              </div>
-
-              {/* Education */}
-              <div className="space-y-2">
-                <h4 className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest border-b border-indigo-50 pb-1">Education</h4>
-                <div>
-                  <div className="flex justify-between font-bold text-slate-800">
-                    <span>{currentResume.education.degree}</span>
-                    <span className="text-slate-400 font-semibold text-[10px]">{currentResume.education.graduation}</span>
-                  </div>
-                  <p className="text-[10.5px] text-slate-450 font-medium">{currentResume.education.school}</p>
-                </div>
-              </div>
-
-            </div>
+            <iframe
+    src={currentResume?.resumeUrl}
+    className="w-full h-full"
+/>
 
             {/* Modal Footer */}
             <div className="p-4 border-t border-slate-100 bg-slate-50/20 flex justify-end">

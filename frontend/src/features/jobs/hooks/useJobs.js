@@ -1,5 +1,5 @@
 import { useDispatch } from "react-redux";
-import { getAllJobApi, getJobByIdApi } from "../api/job.api";
+import { getAllJobApi, getJobByIdApi, applyJobApi } from "../api/job.api";
 import { setJob, setLoading, setSingleJob,setError } from "../../../redux/job.slice";
 export const useJobs=()=>{
     const dispatch=useDispatch();
@@ -26,5 +26,20 @@ export const useJobs=()=>{
         dispatch(setLoading(false))
       }
     }
-    return {getAllJobs,getOneJob};
+    const applyJob=async(id)=>{
+      try{
+        dispatch(setLoading(true))
+        const res=await applyJobApi(id)
+        if (res.job) {
+          dispatch(setSingleJob(res.job))
+        }
+        return res;
+      }catch(error){
+        dispatch(setError(error))
+        throw error;
+      }finally{
+        dispatch(setLoading(false))
+      }
+    }
+    return {getAllJobs,getOneJob,applyJob};
 }

@@ -342,9 +342,8 @@ const JobsDets = () => {
  
   const { id } = useParams();
   const navigate = useNavigate();
-  const { getOneJob } = useJobs();
+  const { getOneJob,applyJob } = useJobs();
 const { singleJob, loading } = useSelector((state) => state.job);
-
   // Fetch jobs if the store is empty
  useEffect(() => {
     getOneJob(id);
@@ -354,8 +353,10 @@ const { singleJob, loading } = useSelector((state) => state.job);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [screeningPhase, setScreeningPhase] = useState("");
   const [appliedSuccessfully, setAppliedSuccessfully] = useState(false);
-  const [fileName, setFileName] = useState("");
   const [cvMatchedScore, setCvMatchedScore] = useState(null);
+  const [hasApplied, setHasApplied] = useState(
+    () => localStorage.getItem(`applied_${id}`) === "true"
+  );
   // Resolve current active job details (merging mock data with API database fields where necessary)
   const job = useMemo(() => {
   if (!singleJob) return null;
@@ -413,24 +414,29 @@ if (loading || !job) {
 
 
   // Simulated apply workflow
-  const handleApplyClick = () => {
+  const handleApplyClick = async () => {
+    try {
+      await applyJob(singleJob._id);
+    } catch (err) {
+      const msg = err?.response?.data?.message || "";
+      if (msg === "You have already applied for this job") {
+        setHasApplied(true);
+        localStorage.setItem(`applied_${id}`, "true");
+      }
+      return;
+    }
+    // API success — open modal & start animation
+    localStorage.setItem(`applied_${id}`, "true");
+    setHasApplied(true);
     setIsApplying(true);
     setUploadProgress(0);
     setScreeningPhase("Idle");
     setAppliedSuccessfully(false);
-    setFileName("");
-  };
-
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setFileName(file.name);
-      startScreeningProcess();
-    }
+    startScreeningProcess();
   };
 
   const startScreeningProcess = () => {
-    setScreeningPhase("Uploading");
+    setScreeningPhase("Submitting");
     let progress = 0;
     const uploadInterval = setInterval(() => {
       progress += 10;
@@ -445,7 +451,7 @@ if (loading || !job) {
   const analyzeCV = () => {
     setScreeningPhase("Analyzing");
     const steps = [
-      "Extracting text from resume...",
+      "Analyzing profile details...",
       "Matching required skills & technologies...",
       "Evaluating experience level fit...",
       "Synthesizing recommendations..."
@@ -537,12 +543,21 @@ if (loading || !job) {
             </div>
 
             <div className="w-full md:w-auto">
-              <button
-                onClick={handleApplyClick}
-                className="w-full md:w-auto bg-gradient-to-r from-blue-600 to-violet-600 hover:from-violet-600 hover:to-blue-600 text-white font-semibold px-8 py-3.5 rounded-xl shadow-lg shadow-violet-200 hover:shadow-violet-300 transition-all duration-200 transform hover:-translate-y-0.5"
-              >
-                Apply Now
-              </button>
+              {hasApplied ? (
+                <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold px-6 py-3.5 rounded-xl">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  Already Applied
+                </div>
+              ) : (
+                <button
+                  onClick={handleApplyClick}
+                  className="w-full md:w-auto bg-gradient-to-r from-blue-600 to-violet-600 hover:from-violet-600 hover:to-blue-600 text-white font-semibold px-8 py-3.5 rounded-xl shadow-lg shadow-violet-200 hover:shadow-violet-300 transition-all duration-200 transform hover:-translate-y-0.5"
+                >
+                  Apply Now
+                </button>
+              )}
             </div>
           </div>
         </header>
@@ -703,12 +718,21 @@ if (loading || !job) {
               Apply via our smart resume screening interface to get instantaneous match ratings and queue priority.
             </p>
           </div>
-          <button
-            onClick={handleApplyClick}
-            className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-violet-600 hover:from-violet-600 hover:to-blue-600 text-white font-semibold px-10 py-4 rounded-xl shadow-lg shadow-violet-200/80 hover:shadow-violet-300 transition-all duration-200 transform hover:-translate-y-0.5"
-          >
-            Apply Now
-          </button>
+          {hasApplied ? (
+            <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold px-8 py-4 rounded-xl">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              Already Applied
+            </div>
+          ) : (
+            <button
+              onClick={handleApplyClick}
+              className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-violet-600 hover:from-violet-600 hover:to-blue-600 text-white font-semibold px-10 py-4 rounded-xl shadow-lg shadow-violet-200/80 hover:shadow-violet-300 transition-all duration-200 transform hover:-translate-y-0.5"
+            >
+              Apply Now
+            </button>
+          )}
         </section>
 
       </div>
@@ -733,33 +757,15 @@ if (loading || !job) {
               AI Screen Recommendation Process: Submit your resume to parse, extract match indicators, and get immediate ratings.
             </p>
 
-            {!fileName && (
-              <div className="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-2xl p-8 hover:border-violet-400 cursor-pointer bg-slate-50/50 hover:bg-slate-50 transition-colors duration-200 relative group">
-                <input
-                  type="file"
-                  accept=".pdf,.doc,.docx"
-                  onChange={handleFileUpload}
-                  className="absolute inset-0 opacity-0 cursor-pointer"
-                />
-                <div className="w-12 h-12 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform duration-200">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" />
-                  </svg>
-                </div>
-                <p className="text-sm font-bold text-slate-700">Upload your Resume</p>
-                <p className="text-[11px] text-slate-400 mt-1">PDF, DOCX, or DOC up to 5MB</p>
-              </div>
-            )}
-
-            {fileName && !appliedSuccessfully && (
+            {!appliedSuccessfully && (
               <div className="flex flex-col gap-4 py-4">
                 <div className="flex items-center gap-3 bg-slate-50 border border-slate-100 p-3 rounded-xl">
                   <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-xs">
-                    📄
+                    👤
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-bold text-slate-800 truncate">{fileName}</p>
-                    <p className="text-[10px] text-slate-400">File Selected</p>
+                    <p className="text-xs font-bold text-slate-800 truncate">Candidate Profile</p>
+                    <p className="text-[10px] text-slate-400">Using Saved Resume</p>
                   </div>
                 </div>
 
@@ -767,14 +773,14 @@ if (loading || !job) {
                   <div className="flex justify-between text-xs font-semibold">
                     <span className="text-violet-600 animate-pulse">{screeningPhase}</span>
                     <span className="text-slate-600">
-                      {screeningPhase === "Uploading" ? `${uploadProgress}%` : "In Progress..."}
+                      {screeningPhase === "Submitting" ? `${uploadProgress}%` : "In Progress..."}
                     </span>
                   </div>
                   <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
                     <div
                       className={`h-full bg-gradient-to-r from-blue-500 to-violet-500 rounded-full transition-all duration-300`}
                       style={{
-                        width: screeningPhase === "Uploading" ? `${uploadProgress}%` : "75%"
+                        width: screeningPhase === "Submitting" ? `${uploadProgress}%` : "75%"
                       }}
                     />
                   </div>
