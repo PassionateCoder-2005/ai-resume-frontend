@@ -2,6 +2,7 @@ import { createSlice } from '@reduxjs/toolkit'
 
 const initialState = {
   job:[],
+  singleJob:null,
   loading:false,
   error:null
 }
@@ -19,11 +20,13 @@ export const jobSlice = createSlice({
     setError: (state, action) => {
       state.error = action.payload
     },
-    
+    setSingleJob:(state,action)=>{
+      state.singleJob=action.payload
+    }
   },
 })
 
 // Action creators are generated for each case reducer function
-export const { setJob, setLoading, setError } = jobSlice.actions
+export const { setJob, setLoading, setError,setSingleJob } = jobSlice.actions
 
 export default jobSlice.reducer

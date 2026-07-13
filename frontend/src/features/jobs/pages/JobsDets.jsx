@@ -339,85 +339,78 @@ const DETAILED_JOBS = {
    Main Component
 ───────────────────────────────────────── */
 const JobsDets = () => {
+ 
   const { id } = useParams();
   const navigate = useNavigate();
-  const dispatchJobs = useJobs();
-
-  // Retrieve live jobs from state
-  const { job: jobsFromState } = useSelector((state) => state.job);
+  const { getOneJob } = useJobs();
+const { singleJob, loading } = useSelector((state) => state.job);
 
   // Fetch jobs if the store is empty
-  useEffect(() => {
-    if (!jobsFromState || jobsFromState.length === 0) {
-      dispatchJobs.getAllJobs();
-    }
-  }, []);
-
-  // Resolve current active job details (merging mock data with API database fields where necessary)
-  const job = useMemo(() => {
-    // 1. Check if it's a numeric ID (for test/local mock jobs 1-9)
-    const numericId = parseInt(id, 10);
-    if (!isNaN(numericId) && DETAILED_JOBS[numericId]) {
-      return DETAILED_JOBS[numericId];
-    }
-    
-    // 2. Check if it exists in the live API response state list
-    const dbJob = jobsFromState?.find((j) => (j._id || j.id) === id);
-    if (dbJob) {
-      const { logo, bg: logoBg, text: logoColor } = getCompanyColorsAndLogo(dbJob.company);
-      
-      // Calculate dynamic AI match score based on title/skills
-      const mockAIScore = 80 + (Array.from(dbJob.title || "").reduce((acc, c) => acc + c.charCodeAt(0), 0) % 18);
-      
-      return {
-        id: dbJob._id || dbJob.id,
-        company: dbJob.company || "Tech Solutions Pvt. Ltd.",
-        logo: logo,
-        logoColor: logoColor,
-        logoBg: logoBg,
-        title: dbJob.title || "Frontend Developer",
-        location: dbJob.location || "Bangalore, India",
-        salary: typeof dbJob.salary === "number" 
-          ? (dbJob.salary >= 100000 ? `₹${(dbJob.salary / 100000).toFixed(0)} LPA` : `₹${dbJob.salary}`) 
-          : (dbJob.salary || "Not specified"),
-        experience: dbJob.experience || "2+ years",
-        skills: dbJob.requiredSkills || dbJob.skills || ["React", "JavaScript", "HTML", "CSS"],
-        posted: "Recent",
-        type: dbJob.type || "Full-time",
-        remote: dbJob.remote || false,
-        industry: dbJob.industry || "Information Technology",
-        website: dbJob.website || "https://techsolutions.com",
-        companySize: dbJob.companySize || "100-250 employees",
-        founded: dbJob.founded || "2018",
-        description: dbJob.description || "No description provided.",
-        responsibilities: dbJob.responsibilities || [
-          "Build responsive and user-friendly web applications using React.",
-          "Collaborate with backend engineers to integrate APIs.",
-          "Write clean, reusable code and tests.",
-          "Maintain high standards of software quality and usability."
-        ],
-        requirements: dbJob.requirements || [
-          "Strong experience with React, JavaScript, and HTML/CSS.",
-          "Familiarity with Tailwind CSS and Git.",
-          "Solid understanding of RESTful APIs.",
-          "Good communication and team collaboration skills."
-        ],
-        aiScore: mockAIScore,
-        aiReasoning: `Strong matching index for ${dbJob.title || "Frontend Developer"}. Candidate shows solid mastery of core technologies like React and Tailwind CSS.`
-      };
-    }
-    
-    // 3. Fallback to first mock job
-    return DETAILED_JOBS[1];
-  }, [id, jobsFromState]);
-
-  // UI States
+ useEffect(() => {
+    getOneJob(id);
+}, [id]);
+   // UI States
   const [isApplying, setIsApplying] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [screeningPhase, setScreeningPhase] = useState("");
   const [appliedSuccessfully, setAppliedSuccessfully] = useState(false);
   const [fileName, setFileName] = useState("");
   const [cvMatchedScore, setCvMatchedScore] = useState(null);
+  // Resolve current active job details (merging mock data with API database fields where necessary)
+  const job = useMemo(() => {
+  if (!singleJob) return null;
+
+  const { logo, bg: logoBg, text: logoColor } =
+    getCompanyColorsAndLogo(singleJob.company);
+
+  return {
+    id: singleJob._id,
+    company: singleJob.company,
+    logo,
+    logoBg,
+    logoColor,
+    title: singleJob.title,
+    location: singleJob.location,
+
+    salary:
+      typeof singleJob.salary === "number"
+        ? `₹${(singleJob.salary / 100000).toFixed(1)} LPA`
+        : singleJob.salary,
+
+    experience: singleJob.experience || "Not specified",
+
+    skills: singleJob.requiredSkills || [],
+
+    description: singleJob.description,
+
+    responsibilities:
+      singleJob.responsibilities || [],
+
+    requirements:
+      singleJob.requirements || [],
+
+    website: singleJob.website || "#",
+
+    industry: singleJob.industry || "IT",
+
+    companySize: singleJob.companySize || "Not specified",
+
+    founded: singleJob.founded || "N/A",
+
+    aiScore: 92,
+
+    aiReasoning:
+      "Your profile matches most of the required skills."
+  };
+}, [singleJob]);
+if (loading || !job) {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      Loading...
+    </div>
+  );
+}
+
 
   // Simulated apply workflow
   const handleApplyClick = () => {
