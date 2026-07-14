@@ -343,14 +343,14 @@ const JobsDets = () => {
  
   const { id } = useParams();
   const navigate = useNavigate();
-  const { getOneJob, applyJob } = useJobs();
+  const { getOneJob, applyJob, getApplications } = useJobs();
   const { user } = useSelector((state) => state.auth);
   const { resume: resumeState } = useSelector((state) => state.resume);
   const currentResume = Array.isArray(resumeState?.resume) ? resumeState?.resume?.[0] : resumeState?.resume;
   const { getResume } = useResumes();
   const { singleJob, loading } = useSelector((state) => state.job);
   const [resumeMissingPrompt, setResumeMissingPrompt] = useState(false);
-
+const application=useSelector((state)=>state.job.application)
   // Fetch jobs if the store is empty
   useEffect(() => {
     getOneJob(id);
@@ -358,16 +358,26 @@ const JobsDets = () => {
 
   useEffect(() => {
     getResume();
-  }, [user?._id, getResume]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?._id]);
    // UI States
   const [isApplying, setIsApplying] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [screeningPhase, setScreeningPhase] = useState("");
   const [appliedSuccessfully, setAppliedSuccessfully] = useState(false);
   const [cvMatchedScore, setCvMatchedScore] = useState(null);
-  const [hasApplied, setHasApplied] = useState(
-    () => localStorage.getItem(`applied_${id}`) === "true"
-  );
+
+  const hasApplied = useMemo(() => {
+    if (!Array.isArray(application)) return false;
+    return application.some((app) => {
+      const jobVal = app.job;
+      if (typeof jobVal === "object" && jobVal !== null) {
+        return jobVal._id === id;
+      }
+      return jobVal === id;
+    });
+  }, [application, id]);
+
   // Resolve current active job details (merging mock data with API database fields where necessary)
   const job = useMemo(() => {
   if (!singleJob) return null;
@@ -433,17 +443,15 @@ if (loading || !job) {
 
     try {
       await applyJob(singleJob._id);
+      getApplications();
     } catch (err) {
       const msg = err?.response?.data?.message || "";
       if (msg === "You have already applied for this job") {
-        setHasApplied(true);
-        localStorage.setItem(`applied_${id}`, "true");
+        getApplications();
       }
       return;
     }
     // API success — open modal & start animation
-    localStorage.setItem(`applied_${id}`, "true");
-    setHasApplied(true);
     setIsApplying(true);
     setUploadProgress(0);
     setScreeningPhase("Idle");

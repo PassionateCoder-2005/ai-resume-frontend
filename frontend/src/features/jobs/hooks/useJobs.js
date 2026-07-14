@@ -1,6 +1,6 @@
 import { useDispatch } from "react-redux";
-import { getAllJobApi, getJobByIdApi, applyJobApi } from "../api/job.api";
-import { setJob, setLoading, setSingleJob,setError } from "../../../redux/job.slice";
+import { getAllJobApi, getJobByIdApi, applyJobApi, getApplicationsApi, getAiRecommendedJobApi } from "../api/job.api";
+import { setJob, setLoading, setSingleJob,setError, setApplication, setAiRecommendJobs } from "../../../redux/job.slice";
 export const useJobs=()=>{
     const dispatch=useDispatch();
     const getAllJobs=async()=>{
@@ -41,5 +41,29 @@ export const useJobs=()=>{
         dispatch(setLoading(false))
       }
     }
-    return {getAllJobs,getOneJob,applyJob};
+    const getApplications=async () => {
+      try{
+        dispatch(setLoading(true))
+        const res=await getApplicationsApi()
+        console.log(res)
+        dispatch(setApplication(res.applications))
+      }catch(error){
+        dispatch(setError(error))
+      }finally{
+        dispatch(setLoading(false))
+      }
+    }
+    const getAiRecommendedJobs=async () => {
+      try{
+        dispatch(setLoading(true))
+        const res=await getAiRecommendedJobApi()
+        console.log(res)
+        dispatch(setAiRecommendJobs(res))
+      }catch(error){
+        dispatch(setError(error))
+      }finally{
+        dispatch(setLoading(false))
+      }
+    }
+    return {getAllJobs,getOneJob,applyJob,getApplications,getAiRecommendedJobs};
 }

@@ -19,3 +19,11 @@ export const applyJobApi=async (id) => {
     const res=await axiosInstance2.post("/apply", { job: id })
     return res.data;
 }
+export const getApplicationsApi=async () => {
+    const res=await axiosInstance2.get("/all")
+    return res.data;
+}
+export const getAiRecommendedJobApi=async () => {
+    const res=await axiosInstance.get("/suggested/recommendations")
+    return res.data;
+} 

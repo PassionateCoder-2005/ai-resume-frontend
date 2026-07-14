@@ -1,9 +1,39 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, Link } from 'react-router'
 import { useSelector } from 'react-redux'
 import { useAuth } from '../hooks/useAuth'
 import { useResumes } from '../../resumes/hooks/useResume'
- 
+
+/* ─────────────────────────────────────────
+   Helper – derive logo letter + bg/text colours from company name
+───────────────────────────────────────── */
+const getCompanyMeta = (companyName) => {
+  const name = companyName || 'Co'
+  const logo = name.slice(0, 2).toUpperCase()
+  const hash = Array.from(name).reduce((acc, c) => acc + c.charCodeAt(0), 0)
+  const palettes = [
+    'bg-indigo-100 text-indigo-700',
+    'bg-blue-100 text-blue-700',
+    'bg-emerald-100 text-emerald-700',
+    'bg-rose-100 text-rose-700',
+    'bg-amber-100 text-amber-700',
+    'bg-cyan-100 text-cyan-700',
+    'bg-purple-100 text-purple-700',
+    'bg-orange-100 text-orange-700',
+  ]
+  return { logo, logoBg: palettes[hash % palettes.length] }
+}
+
+/* ─────────────────────────────────────────
+   Helper – normalise backend status → UI label
+───────────────────────────────────────── */
+const normaliseStatus = (raw) => {
+  const s = (raw || '').toLowerCase()
+  if (s === 'shortlisted' || s === 'selected') return 'Shortlisted'
+  if (s === 'rejected')                         return 'Rejected'
+  return 'In Review'   // pending / under_review / anything else
+}
+
 const CandidateDash = () => {
   const navigate = useNavigate()
   const { user } = useSelector((state) => state.auth)
@@ -12,7 +42,8 @@ const CandidateDash = () => {
   const displayResume = currentResume 
   const { getResume } = useResumes()
   const [resumeUploadPrompt, setResumeUploadPrompt] = useState(false)
-  
+  const application=useSelector((state)=>state.job.application)
+  const aiRecommned=useSelector((state)=>state.job.aiRecommendJobs)
   // Toast notifications state
   const [notifications, setNotifications] = useState([])
   
@@ -36,99 +67,61 @@ const auth=useAuth()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?._id])
 
-  // Dynamic statistics state
-  const [stats, setStats] = useState({
-    resumeName: 'cv_rahul_sharma.pdf',
-    uploadDate: 'July 10, 2026',
-    jobsApplied: 12,
-    shortlisted: 4,
-    rejected: 2
-  })
+  // ── Derive application list from backend Redux state ──────────────────
+  const applications = useMemo(() => {
+    if (!Array.isArray(application) || application.length === 0) return []
+    return application.map((app) => {
+      const jobObj   = app.job   || {}          // populated job object
+      const company  = jobObj.company  || app.company  || 'Company'
+      const { logo, logoBg } = getCompanyMeta(company)
+      const status   = normaliseStatus(app.status)
+      const appliedDate = app.createdAt
+        ? new Date(app.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+        : 'N/A'
+      return {
+        id:          app._id,
+        company,
+        logo,
+        logoBg,
+        jobTitle:    jobObj.title || app.jobTitle || 'Job Position',
+        appliedDate,
+        fitScore:    app.fitScore ?? app.matchScore ?? null,
+        status,
+        feedback:    app.feedback || app.remarks || '',
+      }
+    })
+  }, [application])
 
-  // Recent applications state
-  const [applications, setApplications] = useState([
-    {
-      id: 1,
-      company: 'Stripe',
-      logo: 'S',
-      logoBg: 'bg-indigo-100 text-indigo-700',
-      jobTitle: 'Software Engineer II (React)',
-      appliedDate: 'July 10, 2026',
-      fitScore: 95,
-      status: 'Shortlisted',
-      feedback: 'Excellent technical alignment. Your background in performance-oriented React interfaces at Vercel perfectly matches Stripe\'s frontend system needs.'
-    },
-    {
-      id: 2,
-      company: 'Vercel',
-      logo: '▲',
-      logoBg: 'bg-black text-white',
-      jobTitle: 'Senior Frontend Developer',
-      appliedDate: 'July 08, 2026',
-      fitScore: 91,
-      status: 'In Review',
-      feedback: 'Strong CSS optimization skills. Next steps include a system design interview around edge rendering models.'
-    },
-    {
-      id: 3,
-      company: 'Linear',
-      logo: 'L',
-      logoBg: 'bg-slate-900 text-slate-100',
-      jobTitle: 'Product Engineer',
-      appliedDate: 'July 05, 2026',
-      fitScore: 88,
-      status: 'In Review',
-      feedback: 'Great focus on micro-interactions. Resume highlights custom UI toolkits.'
-    },
-    {
-      id: 4,
-      company: 'Meta',
-      logo: '∞',
-      logoBg: 'bg-blue-100 text-blue-700',
-      jobTitle: 'React Native Developer',
-      appliedDate: 'June 28, 2026',
-      fitScore: 72,
-      status: 'Rejected',
-      feedback: 'Role requires 4+ years of native iOS/Android development. Your profile is heavily web-focused.'
-    }
-  ])
+  // ── Stats derived from real application data ───────────────────────────
+  const stats = useMemo(() => ({
+    jobsApplied: applications.length,
+    shortlisted: applications.filter(a => a.status === 'Shortlisted').length,
+    rejected:    applications.filter(a => a.status === 'Rejected').length,
+  }), [applications])
 
-  // Recommended jobs state
-  const [recommendedJobs, setRecommendedJobs] = useState([
-    {
-      id: 101,
-      company: 'Airbnb',
-      logo: 'A',
-      logoBg: 'bg-rose-100 text-rose-600',
-      jobTitle: 'Frontend Engineer (Design Systems)',
-      location: 'San Francisco, CA (Remote)',
-      salary: '$140k - $170k',
-      fitScore: 96,
-      applied: false
-    },
-    {
-      id: 102,
-      company: 'Clerk',
-      logo: 'C',
-      logoBg: 'bg-purple-100 text-purple-700',
-      jobTitle: 'Developer Advocate',
-      location: 'Boston, MA (Hybrid)',
-      salary: '$130k - $155k',
-      fitScore: 93,
-      applied: false
-    },
-    {
-      id: 103,
-      company: 'Retool',
-      logo: 'R',
-      logoBg: 'bg-orange-100 text-orange-700',
-      jobTitle: 'Full Stack Engineer (React/Node)',
-      location: 'San Francisco, CA',
-      salary: '$150k - $185k',
-      fitScore: 90,
-      applied: false
-    }
-  ])
+  // ── AI Recommended Jobs from backend (filter out already-applied ones) ──
+  const recommendedJobs = useMemo(() => {
+    const list = aiRecommned?.recommendedJobs || []
+    return list
+      .filter(job => (job.applicationStatus || '').toLowerCase() !== 'applied')
+      .map(job => {
+        const { logo, logoBg } = getCompanyMeta(job.company)
+        return {
+          id:             job._id,
+          company:        job.company,
+          logo,
+          logoBg,
+          jobTitle:       job.title,
+          location:       job.location,
+          fitScore:       job.matchScore ?? null,
+          matchedSkills:  job.matchedSkills  || [],
+          missingSkills:  job.missingSkills  || [],
+          reason:         job.reason         || '',
+          recommendation: job.recommendation || '',
+          description:    job.description    || '',
+        }
+      })
+  }, [aiRecommned])
 
   // Resume details
   const [resumeData, setResumeData] = useState({
@@ -207,43 +200,23 @@ const auth=useAuth()
   //   }, 2000)
   // }
 
-  // Simulating Apply Flow
+  // Apply Flow – show resume prompt if no resume; otherwise toast and navigate
   const handleApplyJob = (jobId) => {
     if (!currentResume) {
       setResumeUploadPrompt(true)
       return
     }
-
     const job = recommendedJobs.find(j => j.id === jobId)
-    if (!job || job.applied) return
-
-    // Set job state to applied
-    setRecommendedJobs(prev => prev.map(j => j.id === jobId ? { ...j, applied: true } : j))
-
-    // Increment jobs applied statistic
-    setStats(prev => ({ ...prev, jobsApplied: prev.jobsApplied + 1 }))
-
-    // Add to applications table
-    const newApp = {
-      id: Date.now(),
-      company: job.company,
-      logo: job.logo,
-      logoBg: job.logoBg,
-      jobTitle: job.jobTitle,
-      appliedDate: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
-      fitScore: job.fitScore,
-      status: 'In Review',
-      feedback: `Successfully applied to ${job.jobTitle} position at ${job.company}. AI screening check queued. In review workflow has started.`
-    }
-
-    setApplications(prev => [newApp, ...prev])
-    addToast(`Applied to ${job.jobTitle} at ${job.company} successfully!`, 'success')
+    if (!job) return
+    addToast(`Applying to ${job.jobTitle} at ${job.company}…`, 'info')
+    navigate(`/job/${jobId}`)
   }
 
   // Search & Filtered Applications
   const filteredApplications = applications.filter(app => {
-    const matchesSearch = app.company.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          app.jobTitle.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesSearch =
+      (app.company  || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (app.jobTitle || '').toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = statusFilter === 'All' || app.status === statusFilter
     return matchesSearch && matchesStatus
   })
@@ -530,18 +503,24 @@ const auth=useAuth()
                           </td>
                           <td className="p-4">
                             <div className="flex flex-col items-center gap-1 justify-center">
-                              <span className={`text-xs font-bold ${
-                                app.fitScore >= 90 ? 'text-indigo-600' :
-                                app.fitScore >= 80 ? 'text-blue-600' : 'text-slate-500'
-                              }`}>{app.fitScore}% Match</span>
-                              <div className="w-16 bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                                <div 
-                                  className={`h-full rounded-full ${
-                                    app.fitScore >= 90 ? 'bg-indigo-600' : 'bg-blue-600'
-                                  }`} 
-                                  style={{ width: `${app.fitScore}%` }} 
-                                />
-                              </div>
+                              {app.fitScore != null ? (
+                                <>
+                                  <span className={`text-xs font-bold ${
+                                    app.fitScore >= 90 ? 'text-indigo-600' :
+                                    app.fitScore >= 80 ? 'text-blue-600' : 'text-slate-500'
+                                  }`}>{app.fitScore}% Match</span>
+                                  <div className="w-16 bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                    <div
+                                      className={`h-full rounded-full ${
+                                        app.fitScore >= 90 ? 'bg-indigo-600' : 'bg-blue-600'
+                                      }`}
+                                      style={{ width: `${app.fitScore}%` }}
+                                    />
+                                  </div>
+                                </>
+                              ) : (
+                                <span className="text-[10px] font-semibold text-slate-400 bg-slate-50 border border-slate-100 px-2 py-0.5 rounded-full">Pending</span>
+                              )}
                             </div>
                           </td>
                           <td className="p-4">
@@ -570,8 +549,14 @@ const auth=useAuth()
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="5" className="p-8 text-center text-slate-400 font-medium text-sm">
-                          No applications found matching filters.
+                        <td colSpan="5" className="p-10 text-center">
+                          <div className="flex flex-col items-center gap-3 text-slate-400">
+                            <svg className="w-10 h-10 text-slate-200" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z" />
+                            </svg>
+                            <p className="text-sm font-semibold text-slate-400">No applications yet</p>
+                            <p className="text-xs text-slate-300 font-medium">Apply to jobs to see your application history here.</p>
+                          </div>
                         </td>
                       </tr>
                     )}
@@ -598,63 +583,124 @@ const auth=useAuth()
                 </Link>
               </div>
 
-              {/* 3 Premium Job Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                {recommendedJobs.map(job => (
-                  <div 
-                    key={job.id} 
-                    className="bg-white border border-slate-100 rounded-2xl p-5 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.04)] hover:shadow-md transition-all duration-200 flex flex-col justify-between"
-                  >
-                    <div>
-                      {/* Logo and Match Badge */}
-                      <div className="flex justify-between items-center mb-4">
-                        <div className={`h-10 w-10 rounded-xl flex items-center justify-center font-bold text-sm shadow-sm ${job.logoBg}`}>
-                          {job.logo}
+              {/* AI Recommended Job Cards from backend */}
+              {recommendedJobs.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                  {recommendedJobs.map(job => {
+                    const scoreColor =
+                      job.fitScore >= 85 ? 'text-emerald-600 bg-emerald-50 border-emerald-100' :
+                      job.fitScore >= 65 ? 'text-indigo-600 bg-indigo-50 border-indigo-100' :
+                                           'text-amber-600 bg-amber-50 border-amber-100'
+                    const recColor =
+                      job.recommendation === 'Highly Recommended' ? 'bg-emerald-50 border-emerald-100 text-emerald-700' :
+                      job.recommendation === 'Recommended'        ? 'bg-indigo-50 border-indigo-100 text-indigo-700' :
+                                                                    'bg-amber-50 border-amber-100 text-amber-700'
+                    return (
+                      <div
+                        key={job.id}
+                        className="bg-white border border-slate-100 rounded-2xl p-5 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.04)] hover:shadow-lg transition-all duration-200 flex flex-col justify-between gap-4"
+                      >
+                        {/* Top row: logo + score badge */}
+                        <div className="flex justify-between items-start">
+                          <div className="flex items-center gap-3">
+                            <div className={`h-10 w-10 rounded-xl flex items-center justify-center font-bold text-sm shadow-sm shrink-0 ${job.logoBg}`}>
+                              {job.logo}
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-bold text-slate-800 leading-snug tracking-tight">{job.jobTitle}</h4>
+                              <p className="text-[11px] text-slate-500 font-semibold">{job.company}</p>
+                            </div>
+                          </div>
+                          {job.fitScore != null && (
+                            <span className={`inline-flex items-center text-[10px] font-bold px-2.5 py-1 rounded-full border shrink-0 ${scoreColor}`}>
+                              {job.fitScore}% Match
+                            </span>
+                          )}
                         </div>
-                        <span className="inline-flex items-center text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-100">
-                          {job.fitScore}% Fit Match
-                        </span>
-                      </div>
 
-                      {/* Job Info */}
-                      <div className="space-y-1">
-                        <h4 className="text-sm font-bold text-slate-800 leading-snug tracking-tight hover:text-indigo-600 cursor-pointer">{job.jobTitle}</h4>
-                        <p className="text-xs text-slate-600 font-semibold">{job.company}</p>
-                      </div>
-
-                      {/* Location & Details */}
-                      <div className="mt-4 space-y-1.5 text-slate-400 font-medium text-[11px]">
-                        <div className="flex items-center gap-1.5">
-                          <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                          </svg>
-                          <span className="truncate">{job.location}</span>
+                        {/* Recommendation tier badge + location */}
+                        <div className="flex flex-wrap items-center gap-2 text-[10px] font-semibold">
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full border ${recColor}`}>
+                            <span className={`h-1.5 w-1.5 rounded-full ${
+                              job.recommendation === 'Highly Recommended' ? 'bg-emerald-500' :
+                              job.recommendation === 'Recommended'        ? 'bg-indigo-500' : 'bg-amber-500'
+                            }`} />
+                            {job.recommendation || 'Matched'}
+                          </span>
+                          <span className="flex items-center gap-1 text-slate-400">
+                            <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <span className="truncate">{job.location}</span>
+                          </span>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                          <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <span>{job.salary}</span>
-                        </div>
-                      </div>
-                    </div>
 
-                    {/* Apply Button */}
-                    <button
-                      onClick={() => handleApplyJob(job.id)}
-                      disabled={job.applied}
-                      className={`w-full text-center py-2 px-3 text-xs font-bold rounded-xl mt-5 transition-all cursor-pointer ${
-                        job.applied 
-                          ? 'bg-slate-100 text-slate-400 border border-slate-200/50 cursor-not-allowed'
-                          : 'bg-white hover:bg-indigo-600 text-indigo-600 hover:text-white border border-indigo-200 hover:border-indigo-600 shadow-sm hover:shadow'
-                      }`}
-                    >
-                      {job.applied ? 'Applied ✓' : 'Apply Now'}
-                    </button>
+                        {/* AI reason */}
+                        {job.reason && (
+                          <p className="text-[11px] text-slate-500 leading-relaxed bg-slate-50 border border-slate-100 px-3 py-2 rounded-xl line-clamp-2">
+                            {job.reason}
+                          </p>
+                        )}
+
+                        {/* Matched skills */}
+                        {job.matchedSkills.length > 0 && (
+                          <div>
+                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Matched Skills</p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {job.matchedSkills.map((skill, i) => (
+                                <span key={i} className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full">
+                                  ✓ {skill}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Missing skills */}
+                        {job.missingSkills.length > 0 && (
+                          <div>
+                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Skills to Add</p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {job.missingSkills.slice(0, 3).map((skill, i) => (
+                                <span key={i} className="text-[10px] font-semibold text-rose-600 bg-rose-50 border border-rose-100 px-2 py-0.5 rounded-full">
+                                  + {skill}
+                                </span>
+                              ))}
+                              {job.missingSkills.length > 3 && (
+                                <span className="text-[10px] font-semibold text-slate-400 bg-slate-50 border border-slate-100 px-2 py-0.5 rounded-full">
+                                  +{job.missingSkills.length - 3} more
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Apply CTA */}
+                        <button
+                          onClick={() => handleApplyJob(job.id)}
+                          className="w-full text-center py-2.5 px-3 text-xs font-bold rounded-xl transition-all cursor-pointer bg-white hover:bg-indigo-600 text-indigo-600 hover:text-white border border-indigo-200 hover:border-indigo-600 shadow-sm hover:shadow mt-auto"
+                        >
+                          View & Apply →
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-14 text-center gap-3">
+                  <div className="h-14 w-14 rounded-2xl bg-indigo-50 flex items-center justify-center">
+                    <svg className="w-7 h-7 text-indigo-300" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+                    </svg>
                   </div>
-                ))}
-              </div>
+                  <p className="text-sm font-bold text-slate-600">No new recommendations</p>
+                  <p className="text-xs text-slate-400 font-medium max-w-xs">You've applied to all current AI-matched jobs. Upload or update your resume to get fresh recommendations.</p>
+                  <Link to="/all-jobs" className="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors mt-1">
+                    Browse all jobs →
+                  </Link>
+                </div>
+              )}
             </div>
 
           </div>
@@ -974,13 +1020,19 @@ const auth=useAuth()
             <div className="p-6 space-y-4">
               <div className="flex justify-between items-center pb-3.5 border-b border-slate-100">
                 <span className="text-xs text-slate-400 font-medium">AI Match Fit Score</span>
-                <span className="text-sm font-extrabold text-indigo-600">{selectedAppFeedback.fitScore}% Fit Match</span>
+                {selectedAppFeedback.fitScore != null ? (
+                  <span className="text-sm font-extrabold text-indigo-600">{selectedAppFeedback.fitScore}% Fit Match</span>
+                ) : (
+                  <span className="text-xs font-semibold text-slate-400 bg-slate-50 border border-slate-100 px-2.5 py-1 rounded-full">Score Pending</span>
+                )}
               </div>
 
               <div className="space-y-1.5">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">AI Insight Analysis</span>
                 <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-100/50">
-                  "{selectedAppFeedback.feedback}"
+                  {selectedAppFeedback.feedback
+                    ? `"${selectedAppFeedback.feedback}"`
+                    : 'No AI feedback available yet. Our system is still processing your application.'}
                 </p>
               </div>
 
@@ -991,11 +1043,11 @@ const auth=useAuth()
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0110 21a3.745 3.745 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.746 3.746 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
                   </svg>
                   <span>
-                    {selectedAppFeedback.status === 'Shortlisted' 
-                      ? 'Prepare for coding round focus on component optimization, state structures, and CSS performance metrics.'
+                    {selectedAppFeedback.status === 'Shortlisted'
+                      ? 'Prepare for coding round — focus on component optimization, state structures, and CSS performance metrics.'
                       : selectedAppFeedback.status === 'In Review'
-                      ? 'Check core skills matched and review general Edge middleware capabilities.'
-                      : 'Review requirements match specs to ensure native core experience indicators are highlighted in your next CV revisions.'}
+                      ? 'Application is under review. Keep your profile up-to-date and check your email for next steps.'
+                      : 'Review the job requirements and consider strengthening areas highlighted in the AI feedback for future applications.'}
                   </span>
                 </div>
               </div>
