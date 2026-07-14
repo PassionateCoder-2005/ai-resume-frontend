@@ -53,10 +53,11 @@ export const useAuth=() => {
       try{
         dispatch(setLoading(true));
         const res=await getCurrentUser();
-          dispatch(setUser(res.user));
-            
+        dispatch(setUser(res.user));
+        return res;
         }catch(err){
             console.log("🚀 ~ useAuth ~ err:", err);
+            return null;
         }
         finally{
           dispatch(setLoading(false))
