@@ -419,10 +419,10 @@ const application=useSelector((state)=>state.job.application)
 
     founded: singleJob.founded || "N/A",
 
-    aiScore: 92,
+    aiScore: singleJob.matchScore ?? null,
 
     aiReasoning:
-      "Your profile matches most of the required skills."
+      singleJob.aiReasoning || "Your profile matches most of the required skills."
   };
 }, [singleJob]);
 if (loading || !job) {
@@ -659,16 +659,22 @@ if (loading || !job) {
                 </div>
 
                 <div className="flex items-baseline gap-1 mt-2">
-                  <span className="text-5xl font-black">{job.aiScore}%</span>
-                  <span className="text-sm font-semibold text-violet-200">Match score</span>
+                  <span className="text-5xl font-black">
+                    {job.aiScore != null ? `${job.aiScore}%` : "—"}
+                  </span>
+                  <span className="text-sm font-semibold text-violet-200">
+                    {job.aiScore != null ? "Match score" : "Score pending"}
+                  </span>
                 </div>
 
-                <div className="h-2 w-full bg-white/20 rounded-full overflow-hidden mt-1">
-                  <div
-                    className="h-full bg-gradient-to-r from-emerald-400 to-teal-300 rounded-full transition-all duration-500"
-                    style={{ width: `${job.aiScore}%` }}
-                  />
-                </div>
+                {job.aiScore != null && (
+                  <div className="h-2 w-full bg-white/20 rounded-full overflow-hidden mt-1">
+                    <div
+                      className="h-full bg-gradient-to-r from-emerald-400 to-teal-300 rounded-full transition-all duration-500"
+                      style={{ width: `${job.aiScore}%` }}
+                    />
+                  </div>
+                )}
 
                 <p className="text-xs text-violet-100 leading-relaxed mt-2 font-medium">
                   {job.aiReasoning}
