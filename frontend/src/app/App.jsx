@@ -4,30 +4,21 @@ import { router } from '../routes/Routes'
 import { useAuth } from '../features/auth/hooks/useAuth'
 import { useResumes } from '../features/resumes/hooks/useResume'
 import { useJobs } from '../features/jobs/hooks/useJobs'
-import { useSelector } from 'react-redux'
 
 const App = () => {
-  const auth = useAuth()
-  const resume = useResumes()
-  const job = useJobs()
-  const { user } = useSelector((state) => state.auth)  
-
-  useEffect(() => {
+  const auth=useAuth()
+  const resume=useResumes()
+  const job=useJobs()
+  useEffect(()=>{
     auth.getMe()
-  }, [])
-
-  useEffect(() => {
-    if (user?._id) {
-      resume.getResume()
-      job.getApplications()
-      job.getAiRecommendedJobs()
-    }
-  }, [user?._id])
-
+    resume.getResume()
+    job.getApplications()
+    job.getAiRecommendedJobs()
+},[])
   return (
-    <>
-      <RouterProvider router={router} />
-    </>
+   <>
+   <RouterProvider router={router}/>
+   </>
   )
 }
 
