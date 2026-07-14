@@ -4,6 +4,7 @@ import { router } from '../routes/Routes'
 import { useAuth } from '../features/auth/hooks/useAuth'
 import { useResumes } from '../features/resumes/hooks/useResume'
 import { useJobs } from '../features/jobs/hooks/useJobs'
+import { useSelector } from 'react-redux'
 
 const App = () => {
   const auth = useAuth()
