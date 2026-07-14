@@ -8,6 +8,7 @@ import CandidateProtected from "../features/auth/pages/CandidateProtected";
 import CandidateDash from "../features/auth/pages/CandidateDash";
 import HrProtected from "../features/auth/pages/HrProtected";
 import HrDash from "../features/auth/pages/HrDash";
+import HrApplicants from "../features/auth/pages/HrApplicants";
 import Job from "../features/jobs/pages/Job";
 import JobsDets from "../features/jobs/pages/JobsDets";
 import UploadResume from "../features/resumes/pages/UploadResume";
@@ -35,6 +36,12 @@ export const router = createBrowserRouter([
     path:"/hr/dashboard",
     element:<HrProtected>
       <HrDash/>
+    </HrProtected>
+  },
+  {
+    path:"/hr/jobs/:jobId/applicants",
+    element:<HrProtected>
+      <HrApplicants/>
     </HrProtected>
   },
   {

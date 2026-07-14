@@ -350,12 +350,12 @@ const auth=useAuth()
             </div>
             {currentResume ? (
               <div className="flex gap-2 mt-3.5">
-                <button
+                {/* <button
                   onClick={() => setIsViewingResume(true)}
                   className="text-[10px] font-bold text-indigo-650 hover:text-indigo-800 bg-indigo-50/70 hover:bg-indigo-100/70 px-2.5 py-1.5 rounded-xl transition-all border border-indigo-100 cursor-pointer"
                 >
                   View Details
-                </button>
+                </button> */}
                 <a
                   href={currentResume.resumeUrl}
                   target="_blank"
@@ -404,9 +404,7 @@ const auth=useAuth()
                 </svg>
               </div>
             </div>
-            <p className="text-[10px] text-slate-400 font-medium mt-3.5">
-              Avg. score match: <strong className="text-slate-700 font-bold">93% Fit</strong>
-            </p>
+            
           </div>
 
           {/* Card 4: Rejected */}

@@ -6,7 +6,9 @@ const initialState = {
   loading:false,
   error:null,
   application:[],
-  aiRecommendJobs:[]
+  aiRecommendJobs:[],
+  hrJobs:[],
+  hrJobApplicants:null
 }
 
 export const jobSlice = createSlice({
@@ -30,11 +32,17 @@ export const jobSlice = createSlice({
     },
     setAiRecommendJobs:(state,action)=>{
       state.aiRecommendJobs=action.payload
+    },
+    setHrJobs:(state,action)=>{
+      state.hrJobs=action.payload
+    },
+    setHrJobApplicants:(state,action)=>{
+      state.hrJobApplicants=action.payload
     }
   },
 })
 
 // Action creators are generated for each case reducer function
-export const { setJob, setLoading, setError,setSingleJob,setApplication,setAiRecommendJobs } = jobSlice.actions
+export const { setJob, setLoading, setError,setSingleJob,setApplication,setAiRecommendJobs,setHrJobs,setHrJobApplicants } = jobSlice.actions
 
 export default jobSlice.reducer

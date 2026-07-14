@@ -270,7 +270,7 @@ const currentResume = Array.isArray(resume?.resume) ? resume?.resume?.[0] : resu
 
               <div className="flex justify-between items-center mt-5 text-[11px] text-slate-400 font-semibold px-1">
                 <span>Supported Format: PDF only</span>
-                <span>Max Size: 2 MB</span>
+                <span>Max Size: 5 MB</span>
               </div>
             </div>
 
