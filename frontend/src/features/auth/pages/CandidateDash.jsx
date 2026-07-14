@@ -56,7 +56,7 @@ const CandidateDash = () => {
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [selectedAppFeedback, setSelectedAppFeedback] = useState(null)
-  console.log(resumeState)
+  // console.log(resumeState)
   // Hidden file input ref
   const fileInputRef = useRef(null)
 
