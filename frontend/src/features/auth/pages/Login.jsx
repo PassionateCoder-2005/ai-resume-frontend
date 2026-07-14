@@ -10,19 +10,19 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
-  const isLoading=useSelector((state) => state.auth.loading);
+  const { user, loading: isLoading } = useSelector((state) => state.auth)
+
   useEffect(() => {
-      const user = JSON.parse(localStorage.getItem("user"));
-  
-      if (user) {
-        if (user.role === "candidate") {
-          navigate("/candidate/dashboard", { replace: true });
-        } else if (user.role === "hr") {
-          navigate("/hr/dashboard", { replace: true });
-        }
+    if (user) {
+      if (user.role === "candidate") {
+        navigate("/candidate/dashboard", { replace: true });
+      } else if (user.role === "hr") {
+        navigate("/hr/dashboard", { replace: true });
       }
-    }, [navigate]);
-const auth=useAuth()
+    }
+  }, [user, navigate]);
+
+  const auth=useAuth()
   const handleLoginSubmit = async (e) => {
     e.preventDefault()
     setErrorMessage('')

@@ -13,10 +13,10 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
-const auth=useAuth()
-useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user"));
+  const { user, loading: isLoading } = useSelector((state) => state.auth)
+  const auth=useAuth()
 
+  useEffect(() => {
     if (user) {
       if (user.role === "candidate") {
         navigate("/candidate/dashboard", { replace: true });
@@ -24,8 +24,8 @@ useEffect(() => {
         navigate("/hr/dashboard", { replace: true });
       }
     }
-  }, [navigate]);
-const isLoading=useSelector((state)=>state.auth.loading)
+  }, [user, navigate]);
+
   const handleRegisterSubmit = async(e) => {
     e.preventDefault()
     setErrorMessage('')
@@ -51,10 +51,10 @@ const isLoading=useSelector((state)=>state.auth.loading)
       role:role
     })
     if(role==="candidate"){
-      navigate("/candidate/dash")
+      navigate("/candidate/dashboard")
     }
     else{
-      navigate("/hr/dash")
+      navigate("/hr/dashboard")
     }
   }
 

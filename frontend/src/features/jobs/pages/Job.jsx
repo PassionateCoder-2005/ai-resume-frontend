@@ -250,7 +250,7 @@ const Job = () => {
 
   // Redux active jobs list state
   const { job: jobsFromState, loading } = useSelector((state) => state.job);
-
+   const user=useSelector((state)=>state.auth.user)
   // Load jobs from API endpoint
   useEffect(() => {
     dispatchJobs.getAllJobs();
@@ -336,7 +336,6 @@ const Job = () => {
   };
 
   const handleViewDetails = async(id) => {
-    const user = JSON.parse(localStorage.getItem("user"));
     if (!user) {
       setShowLoginPopup(true);
       return;

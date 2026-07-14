@@ -1,12 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useNavigate, Link } from 'react-router'
+import { useSelector } from 'react-redux'
 import { useAuth } from '../hooks/useAuth'
-
+import { useResumes } from '../../resumes/hooks/useResume'
+ 
 const CandidateDash = () => {
   const navigate = useNavigate()
-  
-  // Stored state for current user
-  const [user, setUser] = useState(null)
+  const { user } = useSelector((state) => state.auth)
+  const { resume: resumeState } = useSelector((state) => state.resume)
+  const currentResume = Array.isArray(resumeState?.resume) ? resumeState?.resume?.[0] : resumeState?.resume;
+  const displayResume = currentResume 
+  const { getResume } = useResumes()
+  const [resumeUploadPrompt, setResumeUploadPrompt] = useState(false)
   
   // Toast notifications state
   const [notifications, setNotifications] = useState([])
@@ -20,22 +25,17 @@ const CandidateDash = () => {
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [selectedAppFeedback, setSelectedAppFeedback] = useState(null)
-  
+  console.log(resumeState)
   // Hidden file input ref
   const fileInputRef = useRef(null)
 
-  // Initialize user from localStorage
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user")
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser))
-      } catch (e) {
-        console.error("Error parsing user data", e)
-      }
-    }
-  }, [])
 const auth=useAuth()
+
+  useEffect(() => {
+    getResume()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?._id])
+
   // Dynamic statistics state
   const [stats, setStats] = useState({
     resumeName: 'cv_rahul_sharma.pdf',
@@ -209,6 +209,11 @@ const auth=useAuth()
 
   // Simulating Apply Flow
   const handleApplyJob = (jobId) => {
+    if (!currentResume) {
+      setResumeUploadPrompt(true)
+      return
+    }
+
     const job = recommendedJobs.find(j => j.id === jobId)
     if (!job || job.applied) return
 
@@ -321,8 +326,7 @@ const auth=useAuth()
 
       {/* Main Body */}
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-        
-        {/* 2. Top Welcome Banner */}
+             {/* 2. Top Welcome Banner */}
         <div className="relative rounded-3xl bg-gradient-to-r from-blue-50/70 to-indigo-50 border border-indigo-100/40 p-6 md:p-8 overflow-hidden mb-8 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           {/* Background shapes */}
           <div className="absolute -top-24 -left-24 w-60 h-60 rounded-full bg-blue-100/40 blur-3xl" />
@@ -332,16 +336,71 @@ const auth=useAuth()
             <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900 leading-tight">
               Welcome back, {user?.username || 'Rahul'} 👋
             </h1>
-            <p className="text-slate-500 font-medium text-sm md:text-base leading-relaxed">
+            <p className="text-slate-505 font-medium text-sm md:text-base leading-relaxed">
               Track your applications and AI resume insights.
             </p>
           </div>
 
-        </div>
+          <div className="relative z-10 flex flex-wrap gap-3">
+            <button
+              onClick={() => navigate('/upload-resume')}
+              className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white hover:bg-indigo-700 transition shadow-md shadow-indigo-100 cursor-pointer"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" className="w-4 h-4">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0 3 3m-3-3-3 3M6.75 19.5a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z" />
+              </svg>
+              {currentResume ? 'Update Resume' : 'Upload Resume'}
+            </button>
+          </div>
+        </div> 
 
         {/* 3. Statistics Cards Grid (4) */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-         
+          
+          {/* Card 1: Resume Details */}
+          <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.04)] hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+            <div className="flex justify-between items-start">
+              <div className="space-y-1 min-w-0">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">My Resume</p>
+                <h3 className="text-sm font-extrabold text-slate-800 truncate" title={currentResume ? currentResume.title : "No resume found"}>
+                  {currentResume ? currentResume.title : "No resume found"}
+                </h3>
+                <p className="text-[10px] text-slate-400 font-medium mt-1">
+                  {currentResume ? `Uploaded ${new Date(currentResume.createdAt).toLocaleDateString()}` : "Please upload a resume"}
+                </p>
+              </div>
+              <div className="p-2.5 rounded-xl bg-violet-50 text-violet-600 shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" className="w-5 h-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                </svg>
+              </div>
+            </div>
+            {currentResume ? (
+              <div className="flex gap-2 mt-3.5">
+                <button
+                  onClick={() => setIsViewingResume(true)}
+                  className="text-[10px] font-bold text-indigo-650 hover:text-indigo-800 bg-indigo-50/70 hover:bg-indigo-100/70 px-2.5 py-1.5 rounded-xl transition-all border border-indigo-100 cursor-pointer"
+                >
+                  View Details
+                </button>
+                <a
+                  href={currentResume.resumeUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[10px] font-bold text-slate-500 hover:text-slate-700 bg-slate-50 hover:bg-slate-100/70 px-2.5 py-1.5 rounded-xl transition-all border border-slate-100 text-center"
+                >
+                  View PDF
+                </a>
+              </div>
+            ) : (
+              <button
+                onClick={() => navigate('/upload-resume')}
+                className="text-[10px] font-bold text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 rounded-xl mt-3.5 transition-all w-full text-center cursor-pointer"
+              >
+                Upload Now
+              </button>
+            )}
+          </div>
 
           {/* Card 2: Jobs Applied */}
           <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.04)] hover:shadow-md transition-all duration-200">
@@ -602,48 +661,72 @@ const auth=useAuth()
 
           {/* RIGHT 1/3 COLUMN: Resume Insights, Score Radial, Top Skills */}
           <div className="space-y-6">
-            
-            {/* Resume Details Card */}
-            
+            {/* Sidebar alert removed for modal popup */}
 
-            {/* Extracted Skills */}
-            <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-[0_2px_18px_-6px_rgba(0,0,0,0.04)] space-y-5">
-              <div>
-                <h3 className="text-base font-extrabold text-slate-900 tracking-tight">AI Extracted Skills</h3>
-                <p className="text-xs text-slate-500 font-medium">Technologies scanned from your curriculum vitae.</p>
+            {!currentResume ? (
+              <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-[0_2px_18px_-6px_rgba(0,0,0,0.04)] space-y-4">
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900 tracking-tight">Resume Status</h3>
+                  <p className="text-xs text-slate-500 font-medium">{resumeState?.message || 'No resume found.'}</p>
+                </div>
+                <p className="text-sm text-slate-600">
+                  We couldn't locate your resume. Upload one to activate AI recommendations and apply to jobs.
+                </p>
+                <button
+                  onClick={() => navigate('/upload-resume')}
+                  className="w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white hover:bg-indigo-700 transition"
+                >
+                  Upload Resume
+                </button>
               </div>
+            ) : (
+              <>
+                <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-[0_2px_18px_-6px_rgba(0,0,0,0.04)] space-y-5">
+                  <div>
+                    <h3 className="text-base font-extrabold text-slate-900 tracking-tight">AI Extracted Skills</h3>
+                    <p className="text-xs text-slate-500 font-medium">Technologies scanned from your curriculum vitae.</p>
+                  </div>
 
-              <div className="flex flex-wrap gap-2">
-                {resumeData.extractedSkills.map((skill, index) => (
-                  <span 
-                    key={index} 
-                    className="text-xs font-semibold text-slate-600 bg-slate-50 border border-slate-100 px-2.5 py-1 rounded-lg"
-                  >
-                    {skill}
-                  </span>
-                ))}
-              </div>
-            </div>
+                  <div className="flex flex-wrap gap-2">
+                    {currentResume?.aiAnalysis?.skills?.map((skill, index) => (
+                      <span 
+                        key={index} 
+                        className="text-xs font-semibold text-slate-600 bg-slate-50 border border-slate-100 px-2.5 py-1 rounded-lg"
+                      >
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                               {/* AI Recommendations */}
+                <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-[0_2px_18px_-6px_rgba(0,0,0,0.04)] space-y-4">
+                  <div>
+                    <h3 className="text-base font-extrabold text-slate-900 tracking-tight">AI Resume Summary</h3>
+                    <p className="text-xs text-slate-500 font-medium mb-3">Extracted professional summary.</p>
+                    <p className="text-xs text-slate-600 bg-slate-50 border border-slate-100 p-3 rounded-xl leading-relaxed">
+                      {currentResume?.aiAnalysis?.summary || "No summary parsed."}
+                    </p>
+                  </div>
 
-            {/* AI Recommendations */}
-            <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-[0_2px_18px_-6px_rgba(0,0,0,0.04)] space-y-4">
-              <div>
-                <h3 className="text-base font-extrabold text-slate-900 tracking-tight">AI Recommendations</h3>
-                <p className="text-xs text-slate-500 font-medium">Actionable insights to boost match scores.</p>
-              </div>
-
-              <ul className="space-y-3">
-                {resumeData.aiRecommendations.map((rec, idx) => (
-                  <li key={idx} className="flex gap-2.5 text-xs text-slate-600 leading-normal">
-                    <svg className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a3 3 0 00-3-3H9.75M12 12.75v-3.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span>{rec}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
+                  <div className="pt-2">
+                    <h3 className="text-xs font-bold text-slate-800 tracking-tight mb-2">AI Optimization Tips</h3>
+                    <ul className="space-y-3">
+                      {(displayResume.aiRecommendations || [
+                        'Highlight React/frontend specialized roles to maximize your 95%+ match scores.',
+                        'Make sure key certifications are listed to bypass automated screen filters.',
+                        'Keep details of your latest experience up-to-date for direct HR routing.'
+                      ]).map((rec, idx) => (
+                        <li key={idx} className="flex gap-2.5 text-xs text-slate-600 leading-normal">
+                          <svg className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a3 3 0 00-3-3H9.75M12 12.75v-3.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span>{rec}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>   </div>
+              </>
+            )}
           </div>
 
         </div>
@@ -699,63 +782,84 @@ const auth=useAuth()
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
-            </div>
-
-            {/* Content split in 2 columns */}
+                       {/* Content split in 2 columns */}
             <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
               
               {/* Left Column: CV Preview Mock */}
-              <div className="border border-slate-150 rounded-2xl p-6 bg-white shadow-sm space-y-6 text-xs text-slate-600 leading-relaxed font-sans">
+              <div className="border border-slate-150 rounded-2xl p-6 bg-white shadow-sm space-y-6 text-xs text-slate-600 leading-relaxed font-sans font-medium">
                 {/* Header */}
                 <div className="text-center pb-5 border-b border-slate-100 space-y-1.5">
-                  <h2 className="text-lg font-black text-slate-800 tracking-tight">{user?.username || 'Rahul Sharma'}</h2>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wide">Software Engineer (Frontend Specialist)</p>
-                  <p className="text-[10px] text-slate-400 font-semibold">rahul.sharma@example.com | +1 (555) 019-2834 | Bangalore, IN</p>
+                  <h2 className="text-lg font-black text-slate-800 tracking-tight">
+                    {currentResume?.aiAnalysis?.candidateName || user?.username || 'Rahul Sharma'}
+                  </h2>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wide">
+                    Parsed Curriculum Vitae
+                  </p>
+                  <p className="text-[10px] text-slate-400 font-semibold">
+                    {currentResume?.aiAnalysis?.email || user?.email || 'N/A'} | {currentResume?.aiAnalysis?.phone || 'N/A'} | {currentResume?.aiAnalysis?.location || 'N/A'}
+                  </p>
                 </div>
 
                 {/* Experience */}
                 <div className="space-y-3">
                   <h4 className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest border-b border-indigo-50 pb-1">Professional Experience</h4>
                   <div className="space-y-3">
-                    <div>
-                      <div className="flex justify-between font-bold text-slate-800">
-                        <span>Frontend Engineer @ Vercel</span>
-                        <span className="text-slate-400 font-semibold text-[10px]">2024 - Present</span>
+                    {currentResume?.aiAnalysis?.experience?.length > 0 ? (
+                      currentResume.aiAnalysis.experience.map((exp, idx) => (
+                        <div key={idx}>
+                          <div className="flex justify-between font-bold text-slate-850">
+                            <span>{exp.jobTitle || 'Role'} {exp.company ? `@ ${exp.company}` : ''}</span>
+                            <span className="text-slate-400 font-semibold text-[10px]">{exp.duration || ''}</span>
+                          </div>
+                          <p className="text-[11px] text-slate-505 mt-1 leading-relaxed">
+                            {exp.description || 'No description parsed.'}
+                          </p>
+                        </div>
+                      ))
+                    ) : (
+                      <div>
+                        <div className="flex justify-between font-bold text-slate-800">
+                          <span>Frontend Engineer @ Vercel</span>
+                          <span className="text-slate-400 font-semibold text-[10px]">2024 - Present</span>
+                        </div>
+                        <p className="text-[11px] text-slate-505 mt-1 leading-relaxed">
+                          Optimized dashboard application load times by 40% utilizing Edge middleware caching. Built reusable React components using TailwindCSS and styled primitives.
+                        </p>
                       </div>
-                      <p className="text-[11px] text-slate-505 mt-1 font-medium">
-                        Optimized dashboard application load times by 40% utilizing Edge middleware caching. Built reusable React components using TailwindCSS and styled primitives.
-                      </p>
-                    </div>
-                    <div>
-                      <div className="flex justify-between font-bold text-slate-800">
-                        <span>Software Engineer @ Stripe</span>
-                        <span className="text-slate-400 font-semibold text-[10px]">2022 - 2024</span>
-                      </div>
-                      <p className="text-[11px] text-slate-505 mt-1 font-medium">
-                        Maintained merchant checkout experience widgets in React. Wrote secure billing integration endpoints using Node.js and TypeScript.
-                      </p>
-                    </div>
+                    )}
                   </div>
                 </div>
 
                 {/* Skills */}
                 <div className="space-y-2">
                   <h4 className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest border-b border-indigo-50 pb-1">Technical Competencies</h4>
-                  <p className="text-[11px] text-slate-700 leading-normal font-semibold">
-                    React.js, Next.js, HTML5/CSS3, TypeScript, JavaScript (ES6+), Node.js, Redux Toolkit, PostgreSQL, TailwindCSS, AWS, Docker.
+                  <p className="text-[11px] text-slate-700 leading-normal font-bold">
+                    {currentResume?.aiAnalysis?.skills?.join(', ') || 'React.js, Node.js, HTML5/CSS3, TypeScript, JavaScript (ES6+), Redux Toolkit, PostgreSQL, TailwindCSS.'}
                   </p>
                 </div>
 
                 {/* Education */}
                 <div className="space-y-2">
                   <h4 className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest border-b border-indigo-50 pb-1">Education</h4>
-                  <div>
-                    <div className="flex justify-between font-bold text-slate-800">
-                      <span>B.Tech in Computer Science & Engineering</span>
-                      <span className="text-slate-400 font-semibold text-[10px]">Graduated 2022</span>
+                  {currentResume?.aiAnalysis?.education?.length > 0 ? (
+                    currentResume.aiAnalysis.education.map((edu, idx) => (
+                      <div key={idx}>
+                        <div className="flex justify-between font-bold text-slate-850">
+                          <span>{edu.degree || 'Degree'}</span>
+                          <span className="text-slate-400 font-semibold text-[10px]">{edu.year || ''}</span>
+                        </div>
+                        <p className="text-[10.5px] text-slate-400 font-semibold">{edu.institution || ''}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <div>
+                      <div className="flex justify-between font-bold text-slate-800">
+                        <span>B.Tech in Computer Science & Engineering</span>
+                        <span className="text-slate-400 font-semibold text-[10px]">Graduated 2022</span>
+                      </div>
+                      <p className="text-[10.5px] text-slate-400">VTU University, Bangalore | 8.9 CGPA</p>
                     </div>
-                    <p className="text-[10.5px] text-slate-400 font-medium">VTU University, Bangalore | 8.9 CGPA</p>
-                  </div>
+                  )}
                 </div>
               </div>
 
@@ -767,10 +871,10 @@ const auth=useAuth()
                   <div className="space-y-1">
                     <p className="text-[10px] font-bold text-indigo-700 uppercase tracking-widest">AI Assessment Status</p>
                     <h4 className="text-base font-black text-slate-900">Highly Recommended</h4>
-                    <p className="text-xs text-slate-505 font-medium">Matching score is higher than 92% of local applicants.</p>
+                    <p className="text-xs text-slate-505 font-medium">Matching score is calculated against active vacancy benchmarks.</p>
                   </div>
                   <div className="h-16 w-16 bg-white rounded-xl shadow border border-indigo-100 flex items-center justify-center shrink-0">
-                    <span className="text-lg font-black text-indigo-600">{resumeData.score}%</span>
+                    <span className="text-lg font-black text-indigo-600">{currentResume?.score || resumeData.score}%</span>
                   </div>
                 </div>
 
@@ -816,18 +920,13 @@ const auth=useAuth()
 
                 {/* Actionable recommendations */}
                 <div className="space-y-3">
-                  <h4 className="text-xs font-bold text-slate-900">Actionable Suggestions</h4>
-                  <ul className="space-y-2.5">
-                    {resumeData.aiRecommendations.map((rec, idx) => (
-                      <li key={idx} className="flex gap-2 text-xs text-slate-600 leading-normal">
-                        <span className="text-indigo-600 shrink-0 select-none">✓</span>
-                        <span>{rec}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <h4 className="text-xs font-bold text-slate-900">AI Assessment Summary</h4>
+                  <p className="text-xs text-slate-650 leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-100/50">
+                    {currentResume?.aiAnalysis?.summary || "No summary parsed by AI."}
+                  </p>
                 </div>
 
-              </div>
+              </div>     </div>
 
             </div>
 
@@ -912,6 +1011,42 @@ const auth=useAuth()
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* Resume Upload Prompt Modal */}
+      {resumeUploadPrompt && !currentResume && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-2xl max-w-sm w-full text-center space-y-5 animate-fadeIn">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-amber-600">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" className="w-6 h-6">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+              </svg>
+            </div>
+            <div className="space-y-2">
+              <h4 className="text-base font-extrabold text-slate-900">Resume Upload Required</h4>
+              <p className="text-xs text-slate-500 leading-normal">
+                You must upload a resume before you can apply to any job. AI screening and compatibility matching require a parsed profile.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setResumeUploadPrompt(false)}
+                className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-650 hover:bg-slate-50 transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setResumeUploadPrompt(false);
+                  navigate('/upload-resume');
+                }}
+                className="flex-1 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-indigo-700 transition shadow-md shadow-indigo-100 cursor-pointer"
+              >
+                Upload Resume
+              </button>
+            </div>
           </div>
         </div>
       )}

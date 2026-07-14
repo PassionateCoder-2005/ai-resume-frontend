@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router";
 import { useSelector } from "react-redux";
 import { useJobs } from "../hooks/useJobs";
+import { useResumes } from "../../resumes/hooks/useResume";
 
 /* ─────────────────────────────────────────
    Helper for Fallback Logo & Styling
@@ -342,12 +343,22 @@ const JobsDets = () => {
  
   const { id } = useParams();
   const navigate = useNavigate();
-  const { getOneJob,applyJob } = useJobs();
-const { singleJob, loading } = useSelector((state) => state.job);
+  const { getOneJob, applyJob } = useJobs();
+  const { user } = useSelector((state) => state.auth);
+  const { resume: resumeState } = useSelector((state) => state.resume);
+  const currentResume = Array.isArray(resumeState?.resume) ? resumeState?.resume?.[0] : resumeState?.resume;
+  const { getResume } = useResumes();
+  const { singleJob, loading } = useSelector((state) => state.job);
+  const [resumeMissingPrompt, setResumeMissingPrompt] = useState(false);
+
   // Fetch jobs if the store is empty
- useEffect(() => {
+  useEffect(() => {
     getOneJob(id);
-}, [id]);
+  }, [id]);
+
+  useEffect(() => {
+    getResume();
+  }, [user?._id, getResume]);
    // UI States
   const [isApplying, setIsApplying] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -415,6 +426,11 @@ if (loading || !job) {
 
   // Simulated apply workflow
   const handleApplyClick = async () => {
+    if (!currentResume) {
+      setResumeMissingPrompt(true);
+      return;
+    }
+
     try {
       await applyJob(singleJob._id);
     } catch (err) {
@@ -543,6 +559,7 @@ if (loading || !job) {
             </div>
 
             <div className="w-full md:w-auto">
+              {/* Inline warning removed for modal popup */}
               {hasApplied ? (
                 <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold px-6 py-3.5 rounded-xl">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -822,6 +839,41 @@ if (loading || !job) {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+      {/* Resume Missing Modal */}
+      {resumeMissingPrompt && !currentResume && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-2xl max-w-sm w-full text-center space-y-5 animate-fadeIn">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-amber-600">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" className="w-6 h-6">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+              </svg>
+            </div>
+            <div className="space-y-2">
+              <h4 className="text-base font-extrabold text-slate-900">Resume Upload Required</h4>
+              <p className="text-xs text-slate-500 leading-normal">
+                You must upload a resume before applying to this job. HireVibe AI uses your parsed resume to calculate compatibility and fit scores.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setResumeMissingPrompt(false)}
+                className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-650 hover:bg-slate-50 transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setResumeMissingPrompt(false);
+                  navigate('/upload-resume');
+                }}
+                className="flex-1 rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 hover:from-violet-600 hover:to-blue-600 text-white font-semibold px-4 py-2.5 text-xs transition-all shadow-md cursor-pointer"
+              >
+                Upload Resume
+              </button>
+            </div>
           </div>
         </div>
       )}

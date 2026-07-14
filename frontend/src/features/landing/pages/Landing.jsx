@@ -1,19 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router";
+import { useSelector } from 'react-redux'
 const Landing = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [mockupTab, setMockupTab] = useState('recruiter') // 'recruiter' | 'candidate'
-const navigate = useNavigate();
-
-const [user, setUser] = useState(null);
-
-useEffect(() => {
-  const loggedInUser = JSON.parse(localStorage.getItem("user"));
-
-  if (loggedInUser) {
-    setUser(loggedInUser);
-  }
-}, []);
+  const navigate = useNavigate();
+  const { user } = useSelector((state) => state.auth)
 
 const goToDashboard = () => {
   if (!user) {

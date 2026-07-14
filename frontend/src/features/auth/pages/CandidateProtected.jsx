@@ -1,19 +1,23 @@
 import React from 'react'
 import { Navigate } from 'react-router';
+import { useSelector } from 'react-redux'
 
 const CandidateProtected = ({children}) => {
-    if(localStorage.getItem("user")){
-        const user=JSON.parse(localStorage.getItem("user"));
-        if(user.role==="candidate"){
-            return children;
-        }
-        else{
-            return <Navigate to="/"/>
-        }
+    const { user, loading } = useSelector((state) => state.auth)
+
+    if (loading) {
+        return <div>Loading...</div>
     }
-    else{
-        return <Navigate to="/login"/>
+
+    if (user?.role === "candidate") {
+        return children
     }
+
+    if (user) {
+        return <Navigate to="/" />
+    }
+
+    return <Navigate to="/login" />
 }
 
 export default CandidateProtected

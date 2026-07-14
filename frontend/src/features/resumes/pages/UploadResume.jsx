@@ -129,7 +129,7 @@ const { resume, loading } = useSelector((state) => state.resume);
       setNotification(null);
     }, 4000);
   };
-const currentResume = resume?.resume;
+const currentResume = Array.isArray(resume?.resume) ? resume?.resume?.[0] : resume?.resume;
   // Drag Handlers
   const handleDrag = (e) => {
     e.preventDefault();
@@ -305,20 +305,20 @@ const currentResume = resume?.resume;
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-slate-400 font-medium">Status</span>
                     <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border capitalize ${
-                      currentResume.status?.toLowerCase() === "completed" || currentResume.status?.toLowerCase() === "active" || currentResume.status?.toLowerCase() === "screening complete"
+                      currentResume.isActive || currentResume.status?.toLowerCase() === "completed" || currentResume.status?.toLowerCase() === "active" || currentResume.status?.toLowerCase() === "screening complete"
                         ? "bg-emerald-50 border-emerald-100 text-emerald-700"
                         : currentResume.status?.toLowerCase() === "pending"
                         ? "bg-amber-50 border-amber-100 text-amber-700"
                         : "bg-slate-50 border-slate-200 text-slate-650"
                     }`}>
                       <span className={`h-1.5 w-1.5 rounded-full ${
-                        currentResume.status?.toLowerCase() === "completed" || currentResume.status?.toLowerCase() === "active" || currentResume.status?.toLowerCase() === "screening complete"
+                        currentResume.isActive || currentResume.status?.toLowerCase() === "completed" || currentResume.status?.toLowerCase() === "active" || currentResume.status?.toLowerCase() === "screening complete"
                           ? "bg-emerald-500"
                           : currentResume.status?.toLowerCase() === "pending"
                           ? "bg-amber-500"
                           : "bg-slate-400"
                       }`} />
-                      {currentResume.status || "Unknown"}
+                      {currentResume.status || (currentResume.isActive ? "Active" : "Pending")}
                     </span>
                   </div>
 
