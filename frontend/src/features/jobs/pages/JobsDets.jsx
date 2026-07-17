@@ -14,7 +14,7 @@ const getCompanyColorsAndLogo = (companyName) => {
   const colors = [
     { bg: "#ede9fe", text: "#6d28d9" },
     { bg: "#dbeafe", text: "#2563eb" },
-    { bg: "#d1fae5", text: "#059669" },
+    { bg: "#d1fae5", text: "#059669" }, 
     { bg: "#fee2e2", text: "#dc2626" },
     { bg: "#fef3c7", text: "#d97706" },
     { bg: "#cffafe", text: "#0891b2" },
@@ -646,7 +646,7 @@ if (loading || !job) {
               <div className="absolute -right-16 -top-16 w-36 h-36 rounded-full bg-white/10 blur-xl pointer-events-none" />
               <div className="absolute -left-16 -bottom-16 w-36 h-36 rounded-full bg-white/10 blur-xl pointer-events-none" />
 
-              <div className="relative z-10 flex flex-col gap-4">
+              {/* <div className="relative z-10 flex flex-col gap-4">
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -683,7 +683,7 @@ if (loading || !job) {
                 <div className="bg-white/10 rounded-xl p-3 border border-white/10 text-[11px] leading-relaxed text-violet-100">
                   ⚡ <strong>AI Recommendation:</strong> Top match for interview candidate cycle. Applying now will submit your profile directly to automated screen queues.
                 </div>
-              </div>
+              </div> */}
             </aside>
 
             {/* Company Info */}

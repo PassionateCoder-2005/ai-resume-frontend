@@ -175,7 +175,7 @@ const goToDashboard = () => {
                   </svg>
                 </button>
                 <button
-                  onClick={() => scrollToSection('features')}
+                  onClick={() => navigate("/all-jobs")}
                   className="w-full sm:w-auto flex items-center justify-center rounded-xl border border-slate-200 bg-white hover:bg-slate-50 px-8 py-4 text-base font-semibold text-slate-700 shadow-sm transition-all hover:border-slate-300 cursor-pointer"
                 >
                   Browse Jobs
