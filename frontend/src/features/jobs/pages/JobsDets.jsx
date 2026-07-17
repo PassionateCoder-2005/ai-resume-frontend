@@ -642,49 +642,6 @@ if (loading || !job) {
           {/* RIGHT 1 COL: Sidebar */}
           <div className="flex flex-col gap-8">
             {/* AI Insights */}
-            <aside className="bg-gradient-to-br from-violet-600 to-indigo-700 rounded-2xl text-white shadow-xl p-6 relative overflow-hidden">
-              <div className="absolute -right-16 -top-16 w-36 h-36 rounded-full bg-white/10 blur-xl pointer-events-none" />
-              <div className="absolute -left-16 -bottom-16 w-36 h-36 rounded-full bg-white/10 blur-xl pointer-events-none" />
-
-              {/* <div className="relative z-10 flex flex-col gap-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" />
-                    </svg>
-                  </div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-violet-200">
-                    AI Match Insight
-                  </span>
-                </div>
-
-                <div className="flex items-baseline gap-1 mt-2">
-                  <span className="text-5xl font-black">
-                    {job.aiScore != null ? `${job.aiScore}%` : "—"}
-                  </span>
-                  <span className="text-sm font-semibold text-violet-200">
-                    {job.aiScore != null ? "Match score" : "Score pending"}
-                  </span>
-                </div>
-
-                {job.aiScore != null && (
-                  <div className="h-2 w-full bg-white/20 rounded-full overflow-hidden mt-1">
-                    <div
-                      className="h-full bg-gradient-to-r from-emerald-400 to-teal-300 rounded-full transition-all duration-500"
-                      style={{ width: `${job.aiScore}%` }}
-                    />
-                  </div>
-                )}
-
-                <p className="text-xs text-violet-100 leading-relaxed mt-2 font-medium">
-                  {job.aiReasoning}
-                </p>
-
-                <div className="bg-white/10 rounded-xl p-3 border border-white/10 text-[11px] leading-relaxed text-violet-100">
-                  ⚡ <strong>AI Recommendation:</strong> Top match for interview candidate cycle. Applying now will submit your profile directly to automated screen queues.
-                </div>
-              </div> */}
-            </aside>
 
             {/* Company Info */}
             <aside className="bg-white rounded-2xl border border-slate-200/80 shadow-[0_4px_12px_rgba(0,0,0,0.03)] p-6">
